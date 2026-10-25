@@ -1,6 +1,6 @@
 # G-GÁS — Back-end
 
-API do painel da distribuidora de gás e água mineral. Monólito modular no mesmo desenho do Hoopi: pacotes de domínio, `AppCore` compartilhado e, em cada app, `models`, `business`, `rules`, `helpers`, `serializers` e `views`.
+API do painel da distribuidora de gás e água mineral. Monólito modular: pacotes de domínio, `AppCore` compartilhado e, em cada app, `models`, `business`, `rules`, `helpers`, `serializers` e `views`.
 
 O banco inicial é **SQLite** (`db.sqlite3` na raiz deste projeto).
 
