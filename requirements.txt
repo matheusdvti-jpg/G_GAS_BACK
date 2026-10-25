@@ -1,0 +1,10 @@
+Django==5.2.14
+django-cors-headers==4.9.0
+django-filter==25.1
+django-simple-history==3.11.0
+djangorestframework==3.16.1
+djangorestframework_simplejwt==5.5.1
+drf-spectacular==0.29.0
+drf-spectacular-sidecar==2026.1.1
+python-dotenv==1.2.1
+PyJWT==2.11.0

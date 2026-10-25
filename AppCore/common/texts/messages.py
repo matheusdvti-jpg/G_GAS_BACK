@@ -1,0 +1,7 @@
+RESPONSE_TENTE_NOVAMENTE = 'Algo não está certo. Tente novamente.'
+RESPONSE_ALGO_QUE_MANDOU_ESTA_ERRADO = 'Algum dado enviado está incorreto.'
+RESPONSE_VOCE_NAO_PODE_FAZER_ISSO = 'Você não tem permissão para esta ação.'
+RESPONSE_ALGUM_DADO_NAO_FOI_ENCONTRADO = 'Registro não encontrado.'
+RESPONSE_ERRO_INTERNO_SERVIDOR = 'Algo deu errado do nosso lado. Tente novamente mais tarde.'
+USUARIO_INATIVO = 'Usuário ou colaborador inativo.'
+CREDENCIAIS_INVALIDAS = 'Usuário ou senha inválidos.'
