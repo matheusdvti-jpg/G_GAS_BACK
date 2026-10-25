@@ -2,7 +2,7 @@
 
 ## Forma
 
-Monólito modular em camadas, no mesmo desenho do Hoopi, sem copiar o domínio de mobilidade. Um processo Django atende HTTP. Cada contexto é um pacote. O estado mora no banco.
+Monólito modular em camadas. Um processo Django atende HTTP. Cada contexto é um pacote. O estado mora no banco.
 
 Não há serviço separado de leitura, fila nem gateway. Relatórios são views no mesmo processo, agregando as tabelas de pedido, item, produto e colaborador.
 
