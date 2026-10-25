@@ -1,6 +1,6 @@
 # G-GÁS — AppCore
 
-Framework interno em `AppCore/`. Todo contexto novo usa estas peças. O desenho acompanha o Hoopi no que o G-GÁS precisa: views base, exceções, permissão e model. Não há utilitário de tempo real nem task.
+Framework interno em `AppCore/`. Todo contexto novo usa estas peças. O desenho que o G-GÁS precisa: views base, exceções, permissão e model. Não há utilitário de tempo real nem task.
 
 ## Camadas
 
