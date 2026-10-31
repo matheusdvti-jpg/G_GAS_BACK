@@ -12,17 +12,20 @@ class ContaWriteSerializer(serializers.Serializer):
 
 class ColaboradorWriteSerializer(serializers.Serializer):
     nome = serializers.CharField(max_length=150, required=False)
-    cpf = serializers.CharField(max_length=14, required=False)
+    cpf = serializers.CharField(max_length=18, required=False)
     telefone = serializers.CharField(max_length=20, required=False)
     perfil = serializers.ChoiceField(choices=PERFIL_CHOICES, required=False)
     ativo = serializers.BooleanField(required=False)
-    placa_veiculo = serializers.CharField(max_length=10, required=False, allow_blank=True)
+    placa_veiculo = serializers.CharField(max_length=40, required=False, allow_blank=True)
     conta = ContaWriteSerializer(required=False)
 
     def validate(self, attrs):
         if self.partial:
             return attrs
-        obrigatorios = ('nome', 'cpf', 'telefone', 'perfil')
+        if attrs.get('perfil') == 'ENTREGADOR':
+            obrigatorios = ('nome', 'telefone', 'perfil')
+        else:
+            obrigatorios = ('nome', 'cpf', 'telefone', 'perfil')
         ausentes = [campo for campo in obrigatorios if not attrs.get(campo)]
         if ausentes:
             raise serializers.ValidationError(

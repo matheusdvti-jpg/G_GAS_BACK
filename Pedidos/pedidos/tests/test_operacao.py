@@ -460,6 +460,7 @@ class EstoqueEPedidosTests(APITestCase):
             'categoria': categoria,
             'preco_venda': '115.00' if categoria == 'GAS' else '40.00',
             'preco_custo': '85.00' if categoria == 'GAS' else '18.00',
+            'descricao': nome,
             'saldo_cheio': saldo,
             'saldo_seco': 0,
             'estoque_minimo': 2,

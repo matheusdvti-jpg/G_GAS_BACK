@@ -64,11 +64,11 @@ class Colaborador(ModelHelperMixin, ModelBusinessMixin, ModelRulesMixin, BasicMo
     rules_class = ColaboradorRules
 
     nome = models.CharField('Nome', max_length=150)
-    cpf = models.CharField('CPF', max_length=11, unique=True)
+    cpf = models.CharField('CPF', max_length=11, unique=True, null=True, blank=True)
     telefone = models.CharField('Telefone', max_length=20)
     perfil = models.CharField('Perfil', max_length=20, choices=PERFIL_CHOICES)
     ativo = models.BooleanField('Ativo', default=True)
-    placa_veiculo = models.CharField('Placa do veículo', max_length=10, blank=True, default='')
+    placa_veiculo = models.CharField('Placa do veículo', max_length=40, blank=True, default='')
 
     class Meta:
         verbose_name = 'Colaborador'

@@ -2,6 +2,8 @@ venv/
 __pycache__/
 *.py[cod]
 db.sqlite3
+certs/
+*.claro.bak
 .env
 staticfiles/
 .idea/

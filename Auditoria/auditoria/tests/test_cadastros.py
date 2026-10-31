@@ -173,6 +173,7 @@ class CadastrosEAuditoriaTests(APITestCase):
             'categoria': 'GAS',
             'preco_venda': '115.00',
             'preco_custo': '85.00',
+            'descricao': 'Botijão de gás 13kg',
             'saldo_cheio': 20,
             'saldo_seco': 0,
             'estoque_minimo': 10,

@@ -15,7 +15,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         if User.objects.filter(username=USERNAME_ADMIN).exists():
-            self.stdout.write('Administrador inicial já existe.')
+            self.stdout.write(
+                f'Administrador inicial já existe. Usuário: {USERNAME_ADMIN} E-mail: {EMAIL_ADMIN}'
+            )
             return
 
         colaborador = ColaboradorBusiness().criar(
@@ -37,5 +39,5 @@ class Command(BaseCommand):
         conta.is_superuser = True
         conta.save(update_fields=['is_staff', 'is_superuser', 'updated_at'])
         self.stdout.write(
-            f'Administrador criado. Usuário: {USERNAME_ADMIN} Senha: {SENHA_ADMIN}'
+            f'Administrador criado. Usuário: {USERNAME_ADMIN} E-mail: {EMAIL_ADMIN} Senha: {SENHA_ADMIN}'
         )

@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -14,26 +15,47 @@ SECRET_KEY = os.environ.get(
     'DJANGO_SECRET_KEY',
     'ggas-dev-apenas-local-nao-usar-fora-desta-maquina',
 )
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = [
     host for host in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if host
 ]
 
+CORS_ALLOW_CREDENTIALS = True
+
 cors_origins = os.environ.get(
     'CORS_ALLOWED_ORIGINS',
-    'http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173',
+    'http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,https://localhost:3000,https://127.0.0.1:3000',
 )
 CORS_ALLOWED_ORIGINS = [origin for origin in cors_origins.split(',') if origin]
 
+DJANGO_DB_KEY = os.environ.get('DJANGO_DB_KEY', '')
+if not DJANGO_DB_KEY and 'test' in sys.argv:
+    DJANGO_DB_KEY = 'chave-somente-dos-testes-automatizados'
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
+        'ENGINE': 'ggas.db.sqlite_cifrado',
         'NAME': BASE_DIR / 'db.sqlite3',
-        'OPTIONS': {
-            'transaction_mode': 'IMMEDIATE',
-        },
+        'PASSWORD': DJANGO_DB_KEY,
     }
 }
+
+SESSAO_COOKIE_NAME = 'ggas_sessao'
+SESSAO_COOKIE_AGE = 60 * 60 * 8
+SESSAO_COOKIE_SECURE = os.environ.get('DJANGO_COOKIE_SECURE', 'True' if not DEBUG else 'False') == 'True'
+if 'test' in sys.argv:
+    SESSAO_COOKIE_SECURE = False
+
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = 'same-origin'
+X_FRAME_OPTIONS = 'DENY'
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Strict'
+CSRF_COOKIE_SAMESITE = 'Strict'
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_SSL_REDIRECT = os.environ.get('DJANGO_SSL_REDIRECT', 'False') == 'True'
 
 AUTH_USER_MODEL = 'colaboradores.User'
 

@@ -5,6 +5,7 @@ class ProdutoBusiness(ModelInstanceBusiness):
     CAMPOS = (
         'codigo',
         'nome',
+        'descricao',
         'marca',
         'categoria',
         'preco_venda',

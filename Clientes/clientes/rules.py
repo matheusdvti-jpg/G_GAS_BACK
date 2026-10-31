@@ -29,35 +29,23 @@ class ClienteRules(ModelInstanceRules):
         if criacao or 'logradouro' in dados:
             logradouro = (dados.get('logradouro') or '').strip()
             if len(logradouro) < 3:
-                self.return_exception('Informe o logradouro do cliente.')
+                self.return_exception('Informe o endereço do cliente.')
             dados['logradouro'] = logradouro
 
         if criacao or 'numero' in dados:
-            numero = (dados.get('numero') or '').strip()
-            if not numero:
-                self.return_exception('Informe o número do endereço.')
-            dados['numero'] = numero
+            dados['numero'] = (dados.get('numero') or '').strip()
 
         if 'complemento' in dados or criacao:
             dados['complemento'] = (dados.get('complemento') or '').strip()
 
         if criacao or 'bairro' in dados:
-            bairro = (dados.get('bairro') or '').strip()
-            if len(bairro) < 2:
-                self.return_exception('Informe o bairro do cliente.')
-            dados['bairro'] = bairro
+            dados['bairro'] = (dados.get('bairro') or '').strip()
 
         if criacao or 'cidade' in dados:
-            cidade = (dados.get('cidade') or '').strip()
-            if len(cidade) < 2:
-                self.return_exception('Informe a cidade do cliente.')
-            dados['cidade'] = cidade
+            dados['cidade'] = (dados.get('cidade') or '').strip()
 
         if criacao or 'ponto_referencia' in dados:
-            referencia = (dados.get('ponto_referencia') or '').strip()
-            if len(referencia) < 3:
-                self.return_exception('Informe o ponto de referência para a entrega.')
-            dados['ponto_referencia'] = referencia
+            dados['ponto_referencia'] = (dados.get('ponto_referencia') or '').strip()
 
         if 'observacoes' in dados or criacao:
             dados['observacoes'] = (dados.get('observacoes') or '').strip()

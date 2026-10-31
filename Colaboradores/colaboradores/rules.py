@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 
 from AppCore.core.rules.rules import ModelInstanceRules
 
-from .choices import PERFIL_ADMINISTRADOR, PERFIL_CHOICES
+from .choices import PERFIL_ADMINISTRADOR, PERFIL_CHOICES, PERFIL_ENTREGADOR
 
 
 class ColaboradorRules(ModelInstanceRules):
@@ -11,14 +11,23 @@ class ColaboradorRules(ModelInstanceRules):
         self._validar_campos(dados, criacao=True)
         from .models import Colaborador
 
-        if Colaborador.objects.filter(cpf=dados['cpf']).exists():
+        if dados.get('cpf') and Colaborador.objects.filter(cpf=dados['cpf']).exists():
             self.return_exception('Já existe um colaborador com este CPF.')
         return True
 
     def validar_atualizacao(self, dados):
         self._validar_campos(dados, criacao=False)
         if 'cpf' in dados and dados['cpf'] != self.object_instance.cpf:
-            self.return_exception('O CPF do colaborador não pode ser alterado.')
+            from .models import Colaborador
+
+            antigo = self.object_instance.cpf
+            novo = dados['cpf']
+            perfil = dados.get('perfil', self.object_instance.perfil)
+            pode_ajustar = (not antigo and novo) or (perfil == PERFIL_ENTREGADOR and not novo)
+            if not pode_ajustar:
+                self.return_exception('O CPF do colaborador não pode ser alterado.')
+            if novo and Colaborador.objects.filter(cpf=novo).exclude(pk=self.object_instance.pk).exists():
+                self.return_exception('Já existe um colaborador com este CPF.')
         self._validar_ultimo_administrador(dados)
         return True
 
@@ -84,7 +93,17 @@ class ColaboradorRules(ModelInstanceRules):
                 self.return_exception('Perfil de colaborador inválido.')
 
         if criacao or 'cpf' in dados:
-            dados['cpf'] = self._normalizar_cpf(dados.get('cpf', ''))
+            perfil = dados.get('perfil')
+            if not perfil and not criacao:
+                perfil = self.object_instance.perfil
+            bruto = str(dados.get('cpf') or '').strip()
+            if not bruto:
+                if perfil == PERFIL_ENTREGADOR:
+                    dados['cpf'] = None
+                else:
+                    self.return_exception('Informe o CPF com 11 dígitos.')
+            else:
+                dados['cpf'] = self._normalizar_cpf(bruto)
 
         if 'placa_veiculo' in dados or criacao:
             dados['placa_veiculo'] = (dados.get('placa_veiculo') or '').strip().upper()
@@ -108,23 +127,9 @@ class ColaboradorRules(ModelInstanceRules):
 
     def _normalizar_cpf(self, valor):
         digitos = ''.join(caractere for caractere in str(valor) if caractere.isdigit())
-        if not self._cpf_valido(digitos):
-            self.return_exception('CPF inválido.')
+        if len(digitos) != 11:
+            self.return_exception('Informe o CPF com 11 dígitos.')
         return digitos
-
-    def _cpf_valido(self, cpf):
-        if len(cpf) != 11 or cpf == cpf[0] * 11:
-            return False
-
-        def digito(base):
-            fator = len(base) + 1
-            total = sum(int(numero) * peso for numero, peso in zip(base, range(fator, 1, -1)))
-            resto = (total * 10) % 11
-            return 0 if resto == 10 else resto
-
-        if digito(cpf[:9]) != int(cpf[9]):
-            return False
-        return digito(cpf[:10]) == int(cpf[10])
 
 
 class UserRules(ModelInstanceRules):

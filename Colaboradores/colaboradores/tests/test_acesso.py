@@ -39,8 +39,12 @@ class AcessoInicialTests(APITestCase):
             format='json',
         )
         self.assertEqual(por_usuario.status_code, 200)
-        self.assertIn('access', por_usuario.data)
+        self.assertNotIn('access', por_usuario.data)
+        self.assertNotIn('refresh', por_usuario.data)
+        self.assertTrue(por_usuario.cookies['ggas_sessao']['httponly'])
         self.assertEqual(por_usuario.data['usuario']['perfil'], 'ADMINISTRADOR')
+        sessao = self.client.get('/auth/eu/')
+        self.assertEqual(sessao.status_code, 200)
 
         por_email = self.client.post(
             '/auth/token_jwt/',
@@ -49,6 +53,18 @@ class AcessoInicialTests(APITestCase):
         )
         self.assertEqual(por_email.status_code, 200)
         self.assertEqual(por_email.data['usuario']['username'], USERNAME_ADMIN)
+
+    def test_logout_revoga_a_sessao_na_hora(self):
+        entrada = self.client.post(
+            '/auth/token_jwt/',
+            {'username': USERNAME_ADMIN, 'password': SENHA_ADMIN},
+            format='json',
+        )
+        self.assertEqual(entrada.status_code, 200)
+        self.assertEqual(self.client.get('/auth/eu/').status_code, 200)
+        saida = self.client.post('/auth/sair/')
+        self.assertEqual(saida.status_code, 200)
+        self.assertEqual(self.client.get('/auth/eu/').status_code, 401)
 
     def test_colaborador_inativo_nao_entra(self):
         entregador = ColaboradorBusiness().criar(
