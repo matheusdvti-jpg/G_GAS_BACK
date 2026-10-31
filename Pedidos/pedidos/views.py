@@ -23,11 +23,17 @@ class PedidoFilter(django_filters.FilterSet):
 
     def filtrar_q(self, queryset, nome, valor):
         texto = valor.strip()
-        return queryset.filter(
+        digitos = ''.join(caractere for caractere in texto if caractere.isdigit())
+        consulta = (
             Q(codigo__icontains=texto)
             | Q(nome_cliente__icontains=texto)
             | Q(telefone_cliente__icontains=texto)
+            | Q(nome_entregador__icontains=texto)
+            | Q(bairro__icontains=texto)
         )
+        if digitos:
+            consulta |= Q(telefone_cliente__icontains=digitos)
+        return queryset.filter(consulta)
 
 
 class PedidoQuerysetMixin:
@@ -49,7 +55,12 @@ class ListarPedidosListView(PedidoQuerysetMixin, AutenticadoMixin, BasicListAPIV
             OpenApiParameter(name='status', required=False, type=str),
             OpenApiParameter(name='cliente', required=False, type=int),
             OpenApiParameter(name='entregador', required=False, type=int),
-            OpenApiParameter(name='q', required=False, type=str),
+            OpenApiParameter(
+                name='q',
+                required=False,
+                type=str,
+                description='Código, cliente, telefone, entregador ou bairro',
+            ),
             OpenApiParameter(name='de', required=False, type=str, description='Data inicial AAAA-MM-DD'),
             OpenApiParameter(name='ate', required=False, type=str, description='Data final AAAA-MM-DD'),
             OpenApiParameter(

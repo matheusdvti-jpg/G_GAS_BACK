@@ -25,6 +25,12 @@ class ClienteFilter(django_filters.FilterSet):
             Q(nome__icontains=texto)
             | Q(telefone__icontains=texto)
             | Q(telefone_secundario__icontains=texto)
+            | Q(logradouro__icontains=texto)
+            | Q(numero__icontains=texto)
+            | Q(complemento__icontains=texto)
+            | Q(bairro__icontains=texto)
+            | Q(cidade__icontains=texto)
+            | Q(ponto_referencia__icontains=texto)
         )
         if digitos:
             consulta |= Q(telefone__icontains=digitos) | Q(telefone_secundario__icontains=digitos)
@@ -43,7 +49,12 @@ class ListarClientesListView(AutenticadoMixin, BasicListAPIView):
         tags=['Clientes'],
         summary='Listar clientes',
         parameters=[
-            OpenApiParameter(name='q', required=False, type=str, description='Nome ou telefone'),
+            OpenApiParameter(
+                name='q',
+                required=False,
+                type=str,
+                description='Nome, telefone ou endereço',
+            ),
             OpenApiParameter(name='cidade', required=False, type=str),
             OpenApiParameter(name='ordering', required=False, type=str),
         ],

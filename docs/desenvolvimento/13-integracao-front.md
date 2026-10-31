@@ -12,7 +12,7 @@ O cliente HTTP traduz. A view React permanece. O back-end não ganha campo, stat
 | --- | --- |
 | Nome de campo em português | Entidade em inglês (`Product`, `Order`) |
 | `Decimal` como texto com duas casas (`230.00`) | Conversão para número na exibição e soma em centavos |
-| Lista com `limit` e `offset`, página padrão 20 | `pageSize` visual (4, 6 ou 8) e o loop em `next` |
+| Lista com `limit` e `offset`, página padrão 20, teto de 100 | A tela pede a página visível e usa `count` |
 | `403` de perfil | Esconder o botão de quem não tem o código |
 | Saldo só por movimentação depois do cadastro | Edição de produto sem reenviar cheio e seco |
 | `PENDENTE`, `ENTREGUE`, `CANCELADO` | Ignorar `NOVO`, `EM_SEPARACAO`, `PRONTO_ENTREGA`, `SAIU_ENTREGA` |
@@ -45,13 +45,14 @@ Some em centavos inteiros e formate na hora de mostrar. `"230.00" + 0` vira text
 
 ### Listas
 
-A página padrão tem 20 linhas. O `pageSize` da tela só fatia o que o cliente já recebeu.
+A página padrão tem 20 linhas. A tela de tabela pede `limit=20`. Cartão e fila pedem `limit=10`. O total do rodapé é o `count` da resposta, não o tamanho do array recebido.
 
-- Cadastro pequeno (cliente, produto, fornecedor, colaborador): siga `next` até esgotar, ou mande o filtro que a rota já tem (`q`, `categoria`, `ativo`, `perfil`).
-- Pedido e movimentação: mande o filtro da tela (`status`, `cliente`, `de`, `ate`, `produto`, `tipo`) e use `limit` e `offset` do tamanho visual.
+- Cliente, pedido e movimentação: mande o filtro da tela (`q`, `status`, `cliente`, `de`, `ate`) junto com `limit` e `offset`. Não percorra `next` para encher a lista.
+- Produto, fornecedor e colaborador cabem no balcão e no seletor. Esses podem seguir `next`.
 - Números do início e do relatório vêm de `/relatorios/painel/` e `/relatorios/periodo/`. Não some a página de pedidos para refazer esse fechamento.
+- A fila do painel traz no máximo 20 pendentes. `pedidos_em_andamento` é o total.
 
-Não remova `PAGE_SIZE` nem devolva a tabela inteira por omissão de `limit`.
+Não remova `PAGE_SIZE` nem devolva a tabela inteira por omissão de `limit`. Um `limit` acima de 100 volta 100.
 
 ### Produto
 

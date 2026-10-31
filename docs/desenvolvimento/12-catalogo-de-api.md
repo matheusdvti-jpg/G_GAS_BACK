@@ -22,7 +22,7 @@ Autenticação das rotas privadas: `Authorization: Bearer <access>`.
 | Método | Rota | Permissão |
 | --- | --- | --- |
 | POST | `/colaboradores/` | `gestao_colaboradores` |
-| GET | `/colaboradores/listar/` | Autenticado. Filtros `perfil`, `ativo`, `nome__icontains`, `ordering` |
+| GET | `/colaboradores/listar/` | Autenticado. Filtros `perfil`, `ativo`, `nome__icontains`, `ordering`. A lista traz `total_pedidos` e `pedidos_entregues` |
 | GET | `/colaboradores/<id>/` | Autenticado |
 | PATCH | `/colaboradores/<id>/atualizar/` | `gestao_colaboradores` |
 | POST | `/colaboradores/<id>/conta/` | `gestao_colaboradores` |
@@ -33,7 +33,7 @@ Autenticação das rotas privadas: `Authorization: Bearer <access>`.
 | Método | Rota | Quem grava | Quem lê |
 | --- | --- | --- | --- |
 | POST | `/clientes/` | `cadastrar_cliente` | |
-| GET | `/clientes/listar/` | | Autenticado. `q` em nome e telefone; também `cidade` e `ordering` (`nome`, `created_at`) |
+| GET | `/clientes/listar/` | | Autenticado. `q` em nome, telefone e endereço; também `cidade` e `ordering` (`nome`, `created_at`) |
 | GET | `/clientes/<id>/` | | Autenticado |
 | PATCH | `/clientes/<id>/atualizar/` | `cadastrar_cliente` | |
 | POST | `/produtos/` | `gerir_produto` | |
@@ -51,7 +51,7 @@ Autenticação das rotas privadas: `Authorization: Bearer <access>`.
 
 | Método | Rota | Permissão |
 | --- | --- | --- |
-| GET | `/estoque/movimentacoes/` | Autenticado. Filtros `produto`, `tipo`, `tipo_saldo`, `pedido_id`, `fornecedor`, `cliente` e `ordering` (`created_at`) |
+| GET | `/estoque/movimentacoes/` | Autenticado. Filtros `q`, `produto`, `tipo`, `tipo_saldo`, `pedido_id`, `fornecedor`, `cliente` e `ordering` (`created_at`) |
 | POST | `/estoque/entradas/` | `entrada_estoque` |
 | POST | `/estoque/saidas/` | `saida_manual_estoque` |
 | POST | `/estoque/conferencias/` | `conferencia_inventario` |
@@ -67,7 +67,7 @@ Conferência: `produto_id`, `contagem`, `motivo`.
 | Método | Rota | Permissão |
 | --- | --- | --- |
 | POST | `/pedidos/` | `nova_venda` |
-| GET | `/pedidos/listar/` | Autenticado. Filtros `status`, `cliente`, `entregador`, `q`, `de`, `ate` e `ordering` (`created_at`, `codigo`, `total`) |
+| GET | `/pedidos/listar/` | Autenticado. Filtros `status`, `cliente`, `entregador`, `q` (código, cliente, telefone, entregador ou bairro), `de`, `ate` e `ordering` (`created_at`, `codigo`, `total`) |
 | GET | `/pedidos/<id>/` | Autenticado |
 | PATCH | `/pedidos/<id>/status/` | Autenticado. A regra interna escolhe confirmar, reabrir ou cancelar |
 
@@ -91,7 +91,7 @@ Corpo do status: `status` e `observacao`.
 - `faturamento_total`, `ticket_medio`: texto com duas casas.
 - `pedidos_em_andamento`, `pedidos_entregues`, `pedidos_entregues_hoje`, `estoque_gas`, `estoque_agua`: inteiros.
 - `alerta_estoque_minimo`: `id`, `nome`, `saldo_cheio`, `estoque_minimo`.
-- `fila_despacho`: `id`, `codigo`, `nome_cliente`, `logradouro`, `numero`, `bairro`, `nome_entregador`, `total`, `itens` (`quantidade`, `nome_produto`).
+- `fila_despacho`: os 20 pendentes mais antigos. `id`, `codigo`, `nome_cliente`, `logradouro`, `numero`, `bairro`, `nome_entregador`, `total`, `itens` (`quantidade`, `nome_produto`). O total da fila continua em `pedidos_em_andamento`.
 - `posicao_deposito`: `id`, `nome`, `marca`, `categoria`, `unidade`, `saldo_cheio`, `saldo_seco`, `estoque_minimo`.
 
 ### Período (`data`)
