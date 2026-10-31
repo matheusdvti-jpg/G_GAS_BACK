@@ -71,7 +71,7 @@ class LeituraHelpers(ModelInstanceHelpers):
         return (
             Pedido.objects.filter(status=STATUS_PENDENTE)
             .prefetch_related('itens')
-            .order_by('created_at')
+            .order_by('created_at')[:20]
         )
 
     def por_pagamento(self, validos):

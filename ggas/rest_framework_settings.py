@@ -13,7 +13,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'DEFAULT_PAGINATION_CLASS': 'ggas.pagination.PaginacaoPadrao',
     'PAGE_SIZE': 20,
     'EXCEPTION_HANDLER': 'AppCore.core.exceptions.handler.api_exception_handler',
     'DEFAULT_FILTER_BACKENDS': (

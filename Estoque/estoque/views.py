@@ -1,4 +1,5 @@
 import django_filters
+from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.filters import OrderingFilter
@@ -17,9 +18,20 @@ from .serializers import (
 
 
 class MovimentacaoFilter(django_filters.FilterSet):
+    q = django_filters.CharFilter(method='filtrar_q')
+
     class Meta:
         model = MovimentacaoEstoque
         fields = ['produto', 'tipo', 'tipo_saldo', 'pedido_id', 'fornecedor', 'cliente']
+
+    def filtrar_q(self, queryset, nome, valor):
+        texto = valor.strip()
+        return queryset.filter(
+            Q(nome_produto__icontains=texto)
+            | Q(motivo__icontains=texto)
+            | Q(nome_fornecedor__icontains=texto)
+            | Q(codigo_pedido__icontains=texto)
+        )
 
 
 class ListarMovimentacoesListView(AutenticadoMixin, BasicListAPIView):
@@ -36,6 +48,12 @@ class ListarMovimentacoesListView(AutenticadoMixin, BasicListAPIView):
         tags=['Estoque'],
         summary='Listar movimentações de estoque',
         parameters=[
+            OpenApiParameter(
+                name='q',
+                required=False,
+                type=str,
+                description='Produto, motivo, fornecedor ou código do pedido',
+            ),
             OpenApiParameter(name='produto', required=False, type=int),
             OpenApiParameter(name='tipo', required=False, type=str),
             OpenApiParameter(name='tipo_saldo', required=False, type=str),

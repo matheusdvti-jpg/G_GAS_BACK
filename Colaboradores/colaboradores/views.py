@@ -1,3 +1,5 @@
+from django.db.models import Count, IntegerField, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.filters import OrderingFilter
@@ -10,13 +12,32 @@ from AppCore.basics.views.basic_views import (
     BasicUpdateAPIView,
 )
 
+from Pedidos.pedidos.choices import STATUS_ENTREGUE
+from Pedidos.pedidos.models import Pedido
+
 from .helpers import ColaboradorHelpers
+
+
+def _contagem_entregas(status=None):
+    consulta = Pedido.objects.filter(entregador=OuterRef('pk'))
+    if status is not None:
+        consulta = consulta.filter(status=status)
+    return Coalesce(
+        Subquery(
+            consulta.order_by().values('entregador').annotate(total=Count('pk')).values('total')[:1],
+            output_field=IntegerField(),
+        ),
+        0,
+    )
 from .models import Colaborador
 from .serializers import ColaboradorSerializer, ColaboradorWriteSerializer, ContaWriteSerializer
 
 
 class ListarColaboradoresListView(AutenticadoMixin, BasicListAPIView):
-    queryset = Colaborador.objects.all().order_by('nome')
+    queryset = Colaborador.objects.annotate(
+        total_pedidos=_contagem_entregas(),
+        pedidos_entregues=_contagem_entregas(STATUS_ENTREGUE),
+    ).order_by('nome')
     serializer_class = ColaboradorSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = {

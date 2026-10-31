@@ -36,6 +36,8 @@ class ColaboradorWriteSerializer(serializers.Serializer):
 
 class ColaboradorSerializer(serializers.ModelSerializer):
     conta = serializers.SerializerMethodField()
+    total_pedidos = serializers.SerializerMethodField()
+    pedidos_entregues = serializers.SerializerMethodField()
 
     class Meta:
         model = Colaborador
@@ -48,9 +50,23 @@ class ColaboradorSerializer(serializers.ModelSerializer):
             'ativo',
             'placa_veiculo',
             'conta',
+            'total_pedidos',
+            'pedidos_entregues',
             'created_at',
             'updated_at',
         )
+
+    def get_total_pedidos(self, obj):
+        anotado = getattr(obj, 'total_pedidos', None)
+        if isinstance(anotado, int):
+            return anotado
+        return obj.entregas.count()
+
+    def get_pedidos_entregues(self, obj):
+        anotado = getattr(obj, 'pedidos_entregues', None)
+        if isinstance(anotado, int):
+            return anotado
+        return obj.entregas.filter(status='ENTREGUE').count()
 
     def get_conta(self, obj):
         conta = obj.helper.conta_ou_nenhuma()
