@@ -2,6 +2,7 @@ venv/
 __pycache__/
 *.py[cod]
 db.sqlite3
+backups/
 certs/
 *.claro.bak
 .env

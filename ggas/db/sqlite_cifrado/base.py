@@ -38,6 +38,44 @@ def _aplicar_chave(conexao, segredo: str) -> None:
     conexao.execute(f"PRAGMA key = \"x'{_chave_hex(segredo)}'\"")
 
 
+def copiar_banco_cifrado(origem: str, destino: str, segredo: str) -> None:
+    if not segredo:
+        raise ImproperlyConfigured('Defina DJANGO_DB_KEY para abrir o banco cifrado.')
+    if not origem or origem == ':memory:' or origem.startswith('file:'):
+        raise ValueError('O banco em memória não tem arquivo para copiar.')
+
+    origem_path = Path(origem)
+    if not origem_path.is_file():
+        raise FileNotFoundError(f'Banco não encontrado: {origem_path}')
+
+    destino_path = Path(destino)
+    destino_path.parent.mkdir(parents=True, exist_ok=True)
+    temporario = destino_path.with_name(destino_path.name + '.tmp')
+    if temporario.exists():
+        temporario.unlink()
+
+    origem_con = None
+    destino_con = None
+    try:
+        origem_con = sqlcipher3.connect(str(origem_path))
+        _aplicar_chave(origem_con, segredo)
+        destino_con = sqlcipher3.connect(str(temporario))
+        _aplicar_chave(destino_con, segredo)
+        origem_con.backup(destino_con)
+        destino_con.commit()
+    except Exception:
+        if temporario.exists():
+            temporario.unlink()
+        raise
+    finally:
+        if destino_con is not None:
+            destino_con.close()
+        if origem_con is not None:
+            origem_con.close()
+
+    temporario.replace(destino_path)
+
+
 def _banco_claro(caminho: str) -> bool:
     if not caminho or caminho == ':memory:' or caminho.startswith('file:'):
         return False
