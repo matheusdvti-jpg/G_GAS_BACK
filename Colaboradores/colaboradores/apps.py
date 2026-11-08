@@ -6,3 +6,8 @@ class ColaboradoresConfig(AppConfig):
     name = 'Colaboradores.colaboradores'
     label = 'colaboradores'
     verbose_name = 'Colaboradores'
+
+    def ready(self):
+        from ggas.backup_automatico import iniciar
+
+        iniciar()

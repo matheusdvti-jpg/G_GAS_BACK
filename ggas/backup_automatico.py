@@ -56,6 +56,7 @@ def iniciar() -> None:
         return
     _thread = threading.Thread(target=_ciclo, name='backup-banco', daemon=True)
     _thread.start()
+    logger.info('Backup semanal ligado. Arquivo: %s', caminho_padrao())
 
 
 def _ciclo() -> None:
