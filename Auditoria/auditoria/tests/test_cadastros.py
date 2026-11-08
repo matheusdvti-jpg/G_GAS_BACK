@@ -17,7 +17,7 @@ def criar_colaborador(nome, cpf, perfil, username, email):
             'conta': {
                 'username': username,
                 'email': email,
-                'password': 'Perfil@123',
+                'password': 'Perfil@123456',
             },
         }
     ).conta

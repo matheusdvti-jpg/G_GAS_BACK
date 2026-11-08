@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from .choices import PERFIL_CHOICES
 from .models import Colaborador
+from .permissoes import usuario_pode
 
 
 class ContaWriteSerializer(serializers.Serializer):
@@ -73,3 +74,16 @@ class ColaboradorSerializer(serializers.ModelSerializer):
         if conta is None:
             return None
         return conta.helper.resumo()
+
+    def to_representation(self, instance):
+        dados = super().to_representation(instance)
+        request = self.context.get('request')
+        usuario = getattr(request, 'user', None) if request is not None else None
+        if (
+            usuario is not None
+            and getattr(usuario, 'is_authenticated', False)
+            and not usuario_pode(usuario, 'ver_dados_colaborador')
+        ):
+            dados.pop('cpf', None)
+            dados.pop('conta', None)
+        return dados

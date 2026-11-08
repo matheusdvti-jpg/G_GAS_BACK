@@ -76,10 +76,11 @@ O token JWT é a exceção: devolve `access`, `refresh` e `usuario` sem esse env
 | `AllowAnyMixin` | Público. Usado na saúde e no token |
 | `AutenticadoMixin` | Usuário ativo com colaborador ativo |
 | `PermissaoMixin` | O anterior, mais `usuario_pode(usuario, view.permissao)` |
+| `PedidoLeituraMixin` | Usuário ativo com `ver_pedidos`, ou entregador. O queryset do entregador filtra a própria entrega |
 
 A view declara `permissao = 'nova_venda'`. Não declare `permission_classes`.
 
-Quando uma rota serve mais de uma decisão, como a troca de status do pedido, a view fica autenticada e o `rules` escolhe o código (`confirmar_entrega`, `reabrir_pedido` ou `cancelar_venda`).
+Quando uma rota serve mais de uma decisão, como a troca de status do pedido, a view usa `PedidoLeituraMixin` e o `rules` escolhe o código (`confirmar_entrega`, `reabrir_pedido` ou `cancelar_venda`).
 
 ## Histórico e manager
 

@@ -4,7 +4,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.filters import OrderingFilter
 
-from AppCore.basics.mixins.mixins import AutenticadoMixin, PermissaoMixin
+from AppCore.basics.mixins.mixins import PermissaoMixin
 from AppCore.basics.views.basic_views import BasicListAPIView, BasicPostAPIView
 
 from .helpers import MovimentacaoHelpers
@@ -34,7 +34,8 @@ class MovimentacaoFilter(django_filters.FilterSet):
         )
 
 
-class ListarMovimentacoesListView(AutenticadoMixin, BasicListAPIView):
+class ListarMovimentacoesListView(PermissaoMixin, BasicListAPIView):
+    permissao = 'ver_movimentacoes'
     serializer_class = MovimentacaoSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_class = MovimentacaoFilter

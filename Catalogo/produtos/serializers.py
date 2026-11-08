@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from Colaboradores.colaboradores.permissoes import usuario_pode
+
 from .choices import CATEGORIA_CHOICES
 from .models import Produto
 
@@ -50,3 +52,15 @@ class ProdutoSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         )
+
+    def to_representation(self, instance):
+        dados = super().to_representation(instance)
+        request = self.context.get('request')
+        usuario = getattr(request, 'user', None) if request is not None else None
+        if (
+            usuario is not None
+            and getattr(usuario, 'is_authenticated', False)
+            and not usuario_pode(usuario, 'ver_custo')
+        ):
+            dados.pop('preco_custo', None)
+        return dados

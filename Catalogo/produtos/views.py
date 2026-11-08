@@ -4,7 +4,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.filters import OrderingFilter
 
-from AppCore.basics.mixins.mixins import AutenticadoMixin, PermissaoMixin
+from AppCore.basics.mixins.mixins import PermissaoMixin
 from AppCore.basics.views.basic_views import BasicGetAPIView, BasicListAPIView, BasicPostAPIView, BasicUpdateAPIView
 
 from .models import Produto
@@ -25,7 +25,8 @@ class ProdutoFilter(django_filters.FilterSet):
         )
 
 
-class ListarProdutosListView(AutenticadoMixin, BasicListAPIView):
+class ListarProdutosListView(PermissaoMixin, BasicListAPIView):
+    permissao = 'ver_produtos'
     queryset = Produto.objects.all()
     serializer_class = ProdutoSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -70,7 +71,8 @@ class CadastrarProdutoPostView(PermissaoMixin, BasicPostAPIView):
         }
 
 
-class ObterProdutoGetView(AutenticadoMixin, BasicGetAPIView):
+class ObterProdutoGetView(PermissaoMixin, BasicGetAPIView):
+    permissao = 'ver_produtos'
     queryset = Produto.objects.all()
     serializer_class = ProdutoSerializer
     success_message = 'Produto encontrado.'

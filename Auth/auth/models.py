@@ -19,6 +19,7 @@ class Sessao(models.Model):
     )
     chave_hash = models.CharField(max_length=64, unique=True)
     expira_em = models.DateTimeField()
+    ultimo_acesso = models.DateTimeField()
     revogada_em = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -28,10 +29,12 @@ class Sessao(models.Model):
     @classmethod
     def abrir(cls, usuario):
         segredo = secrets.token_urlsafe(32)
+        agora = timezone.now()
         cls.objects.create(
             usuario=usuario,
             chave_hash=resumir_segredo(segredo),
-            expira_em=timezone.now() + timedelta(seconds=settings.SESSAO_COOKIE_AGE),
+            expira_em=agora + timedelta(seconds=settings.SESSAO_COOKIE_AGE),
+            ultimo_acesso=agora,
         )
         return segredo
 
@@ -43,15 +46,22 @@ class Sessao(models.Model):
         ).update(revogada_em=timezone.now())
 
     @classmethod
+    def revogar_usuario(cls, usuario) -> None:
+        cls.objects.filter(usuario=usuario, revogada_em__isnull=True).update(
+            revogada_em=timezone.now()
+        )
+
+    @classmethod
     def buscar_ativa(cls, segredo: str):
         if not segredo:
             return None
+        agora = timezone.now()
         return (
             cls.objects.select_related('usuario')
             .filter(
                 chave_hash=resumir_segredo(segredo),
                 revogada_em__isnull=True,
-                expira_em__gt=timezone.now(),
+                expira_em__gt=agora,
             )
             .first()
         )

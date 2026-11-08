@@ -1,22 +1,39 @@
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 
+from AppCore.core.exceptions.exceptions import AuthorizationException
 from AppCore.core.rules.rules import ModelInstanceRules
 
-from .choices import PERFIL_ADMINISTRADOR, PERFIL_CHOICES, PERFIL_ENTREGADOR
+from .choices import (
+    PERFIL_ADMINISTRADOR,
+    PERFIL_ATENDENTE,
+    PERFIL_CHOICES,
+    PERFIL_ENTREGADOR,
+    PERFIL_ESTOQUISTA,
+    PERFIL_GERENTE,
+)
+
+PERFIS_DE_GESTAO = {PERFIL_ADMINISTRADOR, PERFIL_GERENTE}
+PERFIS_OPERACIONAIS = {PERFIL_ATENDENTE, PERFIL_ESTOQUISTA, PERFIL_ENTREGADOR}
 
 
 class ColaboradorRules(ModelInstanceRules):
-    def validar_novo(self, dados):
+    def validar_novo(self, dados, usuario=None):
         self._validar_campos(dados, criacao=True)
+        self._validar_alcance(usuario, None, dados.get('perfil'))
         from .models import Colaborador
 
         if dados.get('cpf') and Colaborador.objects.filter(cpf=dados['cpf']).exists():
             self.return_exception('Já existe um colaborador com este CPF.')
         return True
 
-    def validar_atualizacao(self, dados):
+    def validar_atualizacao(self, dados, usuario=None):
         self._validar_campos(dados, criacao=False)
+        self._validar_alcance(
+            usuario,
+            self.object_instance.perfil,
+            dados.get('perfil', self.object_instance.perfil),
+        )
         if 'cpf' in dados and dados['cpf'] != self.object_instance.cpf:
             from .models import Colaborador
 
@@ -29,6 +46,11 @@ class ColaboradorRules(ModelInstanceRules):
             if novo and Colaborador.objects.filter(cpf=novo).exclude(pk=self.object_instance.pk).exists():
                 self.return_exception('Já existe um colaborador com este CPF.')
         self._validar_ultimo_administrador(dados)
+        return True
+
+    def validar_gestao(self, usuario):
+        perfil = self.object_instance.perfil
+        self._validar_alcance(usuario, perfil, perfil)
         return True
 
     def validar_sem_conta(self, conta):
@@ -107,6 +129,15 @@ class ColaboradorRules(ModelInstanceRules):
 
         if 'placa_veiculo' in dados or criacao:
             dados['placa_veiculo'] = (dados.get('placa_veiculo') or '').strip().upper()
+
+    def _validar_alcance(self, usuario, perfil_atual, perfil_novo):
+        if usuario is None or getattr(usuario, 'is_superuser', False):
+            return
+        colaborador = getattr(usuario, 'colaborador', None)
+        if colaborador is not None and colaborador.perfil == PERFIL_ADMINISTRADOR:
+            return
+        if perfil_atual in PERFIS_DE_GESTAO or perfil_novo not in PERFIS_OPERACIONAIS:
+            raise AuthorizationException('Você não pode alterar administrador ou gerente.')
 
     def _validar_ultimo_administrador(self, dados):
         from .models import Colaborador

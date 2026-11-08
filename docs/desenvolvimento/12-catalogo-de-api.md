@@ -2,28 +2,30 @@
 
 Prefixos em `ggas/urls.py`. Envelope de negócio: `status`, `message`, `data`. Listas incluem `count`, `next` e `previous`. O token é a exceção e não usa envelope.
 
-Autenticação das rotas privadas: `Authorization: Bearer <access>`.
+Autenticação das rotas privadas: cookie `ggas_sessao`, HttpOnly. `POST`, `PATCH` e `DELETE` enviam o cabeçalho `X-CSRFToken`, lido do cookie `csrftoken`.
 
 ## Sistema e sessão
 
 | Método | Rota | Acesso |
 | --- | --- | --- |
 | GET | `/api/health/` | Público. Confere o SQLite |
-| GET | `/api/schema/` | Schema OpenAPI |
-| GET | `/api/schema/swagger/` | Swagger |
-| GET | `/api/schema/redoc/` | Redoc |
-| POST | `/auth/token_jwt/` | Público. Corpo `username` e `password`. `username` aceita e-mail |
-| POST | `/auth/token_jwt/refresh/` | Público. Corpo `refresh` |
-| POST | `/auth/token_jwt/verify/` | Público. Corpo `token` |
+| GET | `/api/schema/` | Administrador |
+| GET | `/api/schema/swagger/` | Administrador |
+| GET | `/api/schema/redoc/` | Administrador |
+| GET | `/auth/csrf/` | Público. Define o cookie `csrftoken` |
+| POST | `/auth/token_jwt/` | Público. Corpo `username` e `password`. `username` aceita e-mail. A resposta traz `usuario` e grava `ggas_sessao` |
+| POST | `/auth/token_jwt/refresh/` | Público. Resposta 410. A sessão não se renova por token |
+| POST | `/auth/token_jwt/verify/` | Público. Resposta 410. A sessão não se verifica por token |
 | GET | `/auth/eu/` | Autenticado |
+| POST | `/auth/sair/` | Encerra a sessão do cookie. Exige CSRF |
 
 ## Colaboradores
 
 | Método | Rota | Permissão |
 | --- | --- | --- |
 | POST | `/colaboradores/` | `gestao_colaboradores` |
-| GET | `/colaboradores/listar/` | Autenticado. Filtros `perfil`, `ativo`, `nome__icontains`, `ordering`. A lista traz `total_pedidos` e `pedidos_entregues` |
-| GET | `/colaboradores/<id>/` | Autenticado |
+| GET | `/colaboradores/listar/` | Autenticado. Filtros `perfil`, `ativo`, `nome__icontains`, `ordering`. A lista traz `total_pedidos` e `pedidos_entregues`. `cpf` e `conta` só com `ver_dados_colaborador` |
+| GET | `/colaboradores/<id>/` | Autenticado. `cpf` e `conta` só com `ver_dados_colaborador` |
 | PATCH | `/colaboradores/<id>/atualizar/` | `gestao_colaboradores` |
 | POST | `/colaboradores/<id>/conta/` | `gestao_colaboradores` |
 | PATCH | `/colaboradores/<id>/conta/atualizar/` | `gestao_colaboradores` |
@@ -33,16 +35,16 @@ Autenticação das rotas privadas: `Authorization: Bearer <access>`.
 | Método | Rota | Quem grava | Quem lê |
 | --- | --- | --- | --- |
 | POST | `/clientes/` | `cadastrar_cliente` | |
-| GET | `/clientes/listar/` | | Autenticado. `q` em nome, telefone e endereço; também `cidade` e `ordering` (`nome`, `created_at`) |
-| GET | `/clientes/<id>/` | | Autenticado |
+| GET | `/clientes/listar/` | | `ver_clientes`. `q` em nome, telefone e endereço; também `cidade` e `ordering` (`nome`, `created_at`) |
+| GET | `/clientes/<id>/` | | `ver_clientes` |
 | PATCH | `/clientes/<id>/atualizar/` | `cadastrar_cliente` | |
 | POST | `/produtos/` | `gerir_produto` | |
-| GET | `/produtos/listar/` | | Autenticado. `q` em nome, marca e código; também `categoria`, `ativo`, `marca` e `ordering` (`nome`, `codigo`, `preco_venda`) |
-| GET | `/produtos/<id>/` | | Autenticado |
+| GET | `/produtos/listar/` | | `ver_produtos`. `q` em nome, marca e código; também `categoria`, `ativo`, `marca` e `ordering` (`nome`, `codigo`, `preco_venda`). `preco_custo` só com `ver_custo` |
+| GET | `/produtos/<id>/` | | `ver_produtos`. `preco_custo` só com `ver_custo` |
 | PATCH | `/produtos/<id>/atualizar/` | `gerir_produto` | |
 | POST | `/fornecedores/` | `gerir_fornecedor` | |
-| GET | `/fornecedores/listar/` | | Autenticado. `q` em fantasia, razão social e CNPJ; também `ativo`, `cidade` e `ordering` (`nome_fantasia`, `created_at`) |
-| GET | `/fornecedores/<id>/` | | Autenticado |
+| GET | `/fornecedores/listar/` | | `ver_fornecedores`. `q` em fantasia, razão social e CNPJ; também `ativo`, `cidade` e `ordering` (`nome_fantasia`, `created_at`) |
+| GET | `/fornecedores/<id>/` | | `ver_fornecedores` |
 | PATCH | `/fornecedores/<id>/atualizar/` | `gerir_fornecedor` | |
 | GET | `/auditoria/listar/` | | `auditoria_sistema`. Filtros `tipo_entidade`, `acao`, `entidade_id`, `usuario`, `q` e `ordering` (`created_at`, `acao`) |
 | GET | `/auditoria/<id>/` | | `auditoria_sistema` |
@@ -51,7 +53,7 @@ Autenticação das rotas privadas: `Authorization: Bearer <access>`.
 
 | Método | Rota | Permissão |
 | --- | --- | --- |
-| GET | `/estoque/movimentacoes/` | Autenticado. Filtros `q`, `produto`, `tipo`, `tipo_saldo`, `pedido_id`, `fornecedor`, `cliente` e `ordering` (`created_at`) |
+| GET | `/estoque/movimentacoes/` | `ver_movimentacoes`. Filtros `q`, `produto`, `tipo`, `tipo_saldo`, `pedido_id`, `fornecedor`, `cliente` e `ordering` (`created_at`). `custo_unitario` só com `ver_custo` |
 | POST | `/estoque/entradas/` | `entrada_estoque` |
 | POST | `/estoque/saidas/` | `saida_manual_estoque` |
 | POST | `/estoque/conferencias/` | `conferencia_inventario` |
@@ -67,9 +69,9 @@ Conferência: `produto_id`, `contagem`, `motivo`.
 | Método | Rota | Permissão |
 | --- | --- | --- |
 | POST | `/pedidos/` | `nova_venda` |
-| GET | `/pedidos/listar/` | Autenticado. Filtros `status`, `cliente`, `entregador`, `q` (código, cliente, telefone, entregador ou bairro), `de`, `ate` e `ordering` (`created_at`, `codigo`, `total`) |
-| GET | `/pedidos/<id>/` | Autenticado |
-| PATCH | `/pedidos/<id>/status/` | Autenticado. A regra interna escolhe confirmar, reabrir ou cancelar |
+| GET | `/pedidos/listar/` | `ver_pedidos`, ou entregador restrito aos próprios pedidos. Filtros `status`, `cliente`, `entregador`, `q` (código, cliente, telefone, entregador ou bairro), `de`, `ate` e `ordering` (`created_at`, `codigo`, `total`) |
+| GET | `/pedidos/<id>/` | `ver_pedidos`, ou o entregador designado. Pedido de outro entregador: 404 |
+| PATCH | `/pedidos/<id>/status/` | Mesma leitura. A regra interna escolhe confirmar, reabrir ou cancelar |
 
 Corpo da venda: `cliente_id`, `entregador_id`, `itens` (`produto_id`, `quantidade`, `vazios_recebidos`), `forma_pagamento`, `valor_recebido`, `tipo_desconto`, `valor_desconto`, `observacoes`.
 
@@ -81,14 +83,14 @@ Corpo do status: `status` e `observacao`.
 
 | Método | Rota | Permissão |
 | --- | --- | --- |
-| GET | `/relatorios/painel/` | Autenticado |
+| GET | `/relatorios/painel/` | Autenticado. `faturamento_total` e `ticket_medio` só com `relatorios_financeiros` |
 | GET | `/relatorios/periodo/` | `relatorios_financeiros` |
 
 `periodo` aceita `de` e `ate` juntos, ou nenhum dos dois.
 
 ### Painel (`data`)
 
-- `faturamento_total`, `ticket_medio`: texto com duas casas.
+- `faturamento_total`, `ticket_medio`: texto com duas casas. Ausentes para quem não tem `relatorios_financeiros`.
 - `pedidos_em_andamento`, `pedidos_entregues`, `pedidos_entregues_hoje`, `estoque_gas`, `estoque_agua`: inteiros.
 - `alerta_estoque_minimo`: `id`, `nome`, `saldo_cheio`, `estoque_minimo`.
 - `fila_despacho`: os 20 pendentes mais antigos. `id`, `codigo`, `nome_cliente`, `logradouro`, `numero`, `bairro`, `nome_entregador`, `total`, `itens` (`quantidade`, `nome_produto`). O total da fila continua em `pedidos_em_andamento`.

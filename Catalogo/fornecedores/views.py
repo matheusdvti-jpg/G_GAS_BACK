@@ -4,7 +4,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.filters import OrderingFilter
 
-from AppCore.basics.mixins.mixins import AutenticadoMixin, PermissaoMixin
+from AppCore.basics.mixins.mixins import PermissaoMixin
 from AppCore.basics.views.basic_views import BasicGetAPIView, BasicListAPIView, BasicPostAPIView, BasicUpdateAPIView
 
 from .models import Fornecedor
@@ -27,7 +27,8 @@ class FornecedorFilter(django_filters.FilterSet):
         return queryset.filter(consulta)
 
 
-class ListarFornecedoresListView(AutenticadoMixin, BasicListAPIView):
+class ListarFornecedoresListView(PermissaoMixin, BasicListAPIView):
+    permissao = 'ver_fornecedores'
     queryset = Fornecedor.objects.all()
     serializer_class = FornecedorSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -71,7 +72,8 @@ class CadastrarFornecedorPostView(PermissaoMixin, BasicPostAPIView):
         }
 
 
-class ObterFornecedorGetView(AutenticadoMixin, BasicGetAPIView):
+class ObterFornecedorGetView(PermissaoMixin, BasicGetAPIView):
+    permissao = 'ver_fornecedores'
     queryset = Fornecedor.objects.all()
     serializer_class = FornecedorSerializer
     success_message = 'Fornecedor encontrado.'

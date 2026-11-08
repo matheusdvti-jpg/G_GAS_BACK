@@ -1,6 +1,7 @@
 import logging
 
 from django.conf import settings
+from django.middleware.csrf import get_token, rotate_token
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
 from rest_framework.response import Response
@@ -13,33 +14,13 @@ from AppCore.core.exceptions.exceptions import BusinessRuleException
 
 from Colaboradores.colaboradores.helpers import UserHelpers
 
+from .acesso import registrar_acesso
+from .autenticacao import exigir_csrf
 from .bloqueio import bloqueado_ate, chave_de, limpar, registrar_falha
 from .models import Sessao
+from .rede import ip_do_cliente
 
 logger = logging.getLogger(__name__)
-
-
-def _ip(request) -> str:
-    return request.META.get('REMOTE_ADDR') or '0.0.0.0'
-
-
-def _samesite() -> str:
-    # O painel na Vercel e a API no PythonAnywhere são sites diferentes.
-    # Strict faz o navegador ignorar o cookie e a sessão cair na hora.
-    if settings.SESSAO_COOKIE_SECURE:
-        return 'None'
-    return 'Lax'
-
-
-def _particionar(response) -> None:
-    if not settings.SESSAO_COOKIE_SECURE:
-        return
-    from http.cookies import Morsel
-
-    if 'partitioned' not in Morsel._reserved:
-        Morsel._reserved['partitioned'] = 'Partitioned'
-        Morsel._flags.add('partitioned')
-    response.cookies[settings.SESSAO_COOKIE_NAME]['partitioned'] = True
 
 
 def _gravar_cookie(response, segredo: str) -> None:
@@ -49,10 +30,9 @@ def _gravar_cookie(response, segredo: str) -> None:
         max_age=settings.SESSAO_COOKIE_AGE,
         httponly=True,
         secure=settings.SESSAO_COOKIE_SECURE,
-        samesite=_samesite(),
+        samesite='Lax',
         path='/',
     )
-    _particionar(response)
 
 
 def _apagar_cookie(response) -> None:
@@ -64,21 +44,29 @@ def _apagar_cookie(response) -> None:
         path='/',
         secure=settings.SESSAO_COOKIE_SECURE,
         httponly=True,
-        samesite=_samesite(),
+        samesite='Lax',
     )
-    _particionar(response)
+
+
+@extend_schema(tags=['Auth'], summary='Define o cookie de CSRF')
+class CsrfView(AllowAnyMixin, APIView):
+    def get(self, request):
+        get_token(request._request)
+        return Response({'status': 'success', 'message': 'Proteção de CSRF pronta.'})
 
 
 @extend_schema(tags=['Auth'], summary='Autenticar e abrir sessão opaca')
 class TokenObtainPairViewDOC(AllowAnyMixin, APIView):
     @handle_exceptions
     def post(self, request, *args, **kwargs):
+        exigir_csrf(request)
         identificador = (request.data.get('username') or '').strip()
         senha = request.data.get('password') or ''
-        ip = _ip(request)
+        ip = ip_do_cliente(request)
         chave = chave_de(ip, identificador)
         if bloqueado_ate(chave):
             logger.warning('Login bloqueado por excesso de tentativas. identificador=%s ip=%s', identificador, ip)
+            registrar_acesso('LOGIN_BLOQUEADO', identificador, ip, UserHelpers().buscar_por_identificador(identificador))
             return Response(
                 {'status': 'error', 'detail': 'Muitas tentativas de login. Aguarde 15 minutos.'},
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -86,19 +74,23 @@ class TokenObtainPairViewDOC(AllowAnyMixin, APIView):
 
         usuario = UserHelpers().buscar_por_identificador(identificador)
         if usuario is None or not usuario.check_password(senha):
-            registrar_falha(chave)
+            bloqueou = registrar_falha(chave)
             logger.warning('Login recusado. identificador=%s ip=%s', identificador, ip)
+            registrar_acesso('LOGIN_BLOQUEADO' if bloqueou else 'LOGIN_RECUSADO', identificador, ip, usuario)
             raise serializers.ValidationError({'detail': CREDENCIAIS_INVALIDAS})
         try:
             usuario.rules.pode_autenticar()
         except BusinessRuleException as exc:
-            registrar_falha(chave)
+            bloqueou = registrar_falha(chave)
             logger.warning('Login recusado. identificador=%s ip=%s motivo=%s', identificador, ip, exc.message)
+            registrar_acesso('LOGIN_BLOQUEADO' if bloqueou else 'LOGIN_RECUSADO', identificador, ip, usuario)
             raise serializers.ValidationError({'detail': exc.message})
 
         limpar(chave)
         segredo = Sessao.abrir(usuario)
+        rotate_token(request._request)
         logger.info('Login aceito. usuario=%s ip=%s', usuario.pk, ip)
+        registrar_acesso('LOGIN_ACEITO', identificador, ip, usuario)
         response = Response({'usuario': usuario.helper.resumo()})
         _gravar_cookie(response, segredo)
         return response
@@ -138,6 +130,7 @@ class EuView(AutenticadoMixin, APIView):
 class SairView(AllowAnyMixin, APIView):
     @extend_schema(tags=['Auth'], summary='Encerrar a sessão atual')
     def post(self, request):
+        exigir_csrf(request)
         segredo = request.COOKIES.get(settings.SESSAO_COOKIE_NAME)
         if segredo:
             Sessao.revogar_segredo(segredo)
