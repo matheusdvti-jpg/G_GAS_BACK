@@ -19,6 +19,25 @@ def _ip(request) -> str:
     return request.META.get('REMOTE_ADDR') or '0.0.0.0'
 
 
+def _samesite() -> str:
+    # O painel na Vercel e a API no PythonAnywhere são sites diferentes.
+    # Strict faz o navegador ignorar o cookie e a sessão cair na hora.
+    if settings.SESSAO_COOKIE_SECURE:
+        return 'None'
+    return 'Lax'
+
+
+def _particionar(response) -> None:
+    if not settings.SESSAO_COOKIE_SECURE:
+        return
+    from http.cookies import Morsel
+
+    if 'partitioned' not in Morsel._reserved:
+        Morsel._reserved['partitioned'] = 'Partitioned'
+        Morsel._flags.add('partitioned')
+    response.cookies[settings.SESSAO_COOKIE_NAME]['partitioned'] = True
+
+
 def _gravar_cookie(response, segredo: str) -> None:
     response.set_cookie(
         settings.SESSAO_COOKIE_NAME,
@@ -26,9 +45,10 @@ def _gravar_cookie(response, segredo: str) -> None:
         max_age=settings.SESSAO_COOKIE_AGE,
         httponly=True,
         secure=settings.SESSAO_COOKIE_SECURE,
-        samesite='Strict',
+        samesite=_samesite(),
         path='/',
     )
+    _particionar(response)
 
 
 def _apagar_cookie(response) -> None:
@@ -40,8 +60,9 @@ def _apagar_cookie(response) -> None:
         path='/',
         secure=settings.SESSAO_COOKIE_SECURE,
         httponly=True,
-        samesite='Strict',
+        samesite=_samesite(),
     )
+    _particionar(response)
 
 
 @extend_schema(tags=['Auth'], summary='Autenticar e abrir sessão opaca')
