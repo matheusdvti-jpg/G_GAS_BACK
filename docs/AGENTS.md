@@ -40,7 +40,7 @@ O comportamento de negócio segue o front montado em `G_GAS_FRONT` (views e caso
 
 - Domínio com regra usa `business.py`, `rules.py` e `helpers.py`.
 - A view recebe HTTP e delega. O `business` orquestra. O `rules` aceita ou lança erro. O serializer não concentra regra de negócio.
-- Use `AllowAnyMixin`, `AutenticadoMixin` ou `PermissaoMixin`. A permissão da rota é o atributo `permissao`. Não declare `permission_classes` na view. A troca de status do pedido fica autenticada: o `rules` escolhe `confirmar_entrega`, `reabrir_pedido` ou `cancelar_venda`.
+- Use `AllowAnyMixin`, `AutenticadoMixin`, `PermissaoMixin` ou `PedidoLeituraMixin`. A permissão da rota é o atributo `permissao`. Não declare `permission_classes` na view. A leitura de pedido deixa o entregador ver só a própria entrega. A troca de status continua no `rules`, que escolhe `confirmar_entrega`, `reabrir_pedido` ou `cancelar_venda`.
 - Listagem expõe filtro em `filterset_fields` ou `FilterSet` e documenta os parâmetros com `@extend_schema` e `OpenApiParameter`.
 - Não crie função solta no topo de `business.py` ou `helpers.py`. Use método da classe.
 - Não abra `transaction.atomic()` no business quando a entrada é `BasicPostAPIView`, `BasicUpdateAPIView` ou `BasicDeleteAPIView`. Essas views já transacionam `do_action_*`. Leitura não precisa de transação.
@@ -57,7 +57,7 @@ O comportamento de negócio segue o front montado em `G_GAS_FRONT` (views e caso
 - Cancelamento estorna o cheio e devolve o seco até o piso zero. `total_pedidos` e `total_gasto` do cliente não voltam atrás.
 - Estoque guarda `pedido_id` como inteiro, sem chave estrangeira para `Pedido`. Pedidos chama o business de estoque. Estoque não importa Pedidos.
 - Cliente, produto e fornecedor não se referenciam por chave. O fornecedor guarda nomes de produtos.
-- Telefone de cliente e fornecedor tem 10 ou 11 dígitos. O do colaborador exige ao menos 8 caracteres. CPF e CNPJ têm dígitos verificadores. Senha não entra em auditoria nem no histórico do model.
+- Telefone de cliente e fornecedor tem 10 ou 11 dígitos. O do colaborador exige ao menos 8 caracteres. CPF e CNPJ têm dígitos verificadores. Senha nova tem no mínimo 12 caracteres. Senha, hash e cookie não entram em auditoria nem no histórico do model.
 
 ### Código
 
@@ -82,19 +82,17 @@ Detalhe em [desenvolvimento/00-setup-local.md](desenvolvimento/00-setup-local.md
 
 ## API
 
-- Schema: `GET /api/schema/`
-- Swagger: `/api/schema/swagger/`
-- Redoc: `/api/schema/redoc/`
-- Saúde: `GET /api/health/`
+- Schema, Swagger e Redoc: administrador. Saúde: `GET /api/health/` continua pública.
 
-JWT:
+Sessão:
 
-- `POST /auth/token_jwt/` — access, refresh e `usuario`. Aceita usuário ou e-mail no campo `username`.
-- `POST /auth/token_jwt/refresh/`
-- `POST /auth/token_jwt/verify/`
+- `GET /auth/csrf/` — cookie `csrftoken` para o cabeçalho `X-CSRFToken`.
+- `POST /auth/token_jwt/` — `usuario` e cookie `ggas_sessao`. Aceita usuário ou e-mail no campo `username`. Exige CSRF.
+- `POST /auth/sair/` — revoga a sessão do cookie. Exige CSRF.
 - `GET /auth/eu/` — envelope com a sessão.
+- `POST /auth/token_jwt/refresh/` e `POST /auth/token_jwt/verify/` respondem 410.
 
-O login JWT não usa o envelope `status` / `message` / `data`. O restante da API de negócio usa.
+O login não usa o envelope `status` / `message` / `data`. O restante da API de negócio usa. A sessão dura 8 horas e cai após 30 minutos sem uso. Troca de senha e desativação da conta revogam as sessões daquele usuário.
 
 ## O que não fazer sem alinhamento
 

@@ -1,5 +1,6 @@
 from rest_framework.permissions import AllowAny, BasePermission
 
+from Colaboradores.colaboradores.choices import PERFIL_ADMINISTRADOR, PERFIL_ENTREGADOR
 from Colaboradores.colaboradores.permissoes import usuario_pode
 
 
@@ -33,3 +34,33 @@ class PermissaoPerfilPermission(BasePermission):
         if not codigo:
             return True
         return usuario_pode(usuario, codigo)
+
+
+class AdministradorPermission(BasePermission):
+    message = 'Você não tem permissão para esta ação.'
+
+    def has_permission(self, request, view):
+        usuario = request.user
+        if not usuario or not usuario.is_authenticated or not usuario.is_active:
+            return False
+        if getattr(usuario, 'is_superuser', False):
+            return True
+        colaborador = getattr(usuario, 'colaborador', None)
+        return (
+            colaborador is not None
+            and colaborador.ativo
+            and colaborador.perfil == PERFIL_ADMINISTRADOR
+        )
+
+
+class PedidoLeituraPermission(BasePermission):
+    message = 'Você não tem permissão para esta ação.'
+
+    def has_permission(self, request, view):
+        usuario = request.user
+        if not usuario or not usuario.is_authenticated:
+            return False
+        if usuario_pode(usuario, 'ver_pedidos'):
+            return True
+        colaborador = getattr(usuario, 'colaborador', None)
+        return colaborador is not None and colaborador.perfil == PERFIL_ENTREGADOR

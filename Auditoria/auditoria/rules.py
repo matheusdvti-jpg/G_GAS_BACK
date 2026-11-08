@@ -12,6 +12,6 @@ class RegistroAuditoriaRules(ModelInstanceRules):
         tipos = {codigo for codigo, _rotulo in TIPO_ENTIDADE_CHOICES}
         if dados.get('tipo_entidade') not in tipos:
             self.return_exception('Tipo de entidade inválido para auditoria.')
-        if dados.get('usuario') is None:
+        if dados.get('usuario') is None and not (dados.get('nome_usuario') or '').strip():
             self.return_exception('A auditoria precisa identificar quem executou a ação.')
         return True

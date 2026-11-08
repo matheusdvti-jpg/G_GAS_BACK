@@ -12,6 +12,7 @@ from AppCore.basics.views.basic_views import (
     BasicUpdateAPIView,
 )
 
+from Auth.auth.rede import ip_do_cliente
 from Pedidos.pedidos.choices import STATUS_ENTREGUE
 from Pedidos.pedidos.models import Pedido
 
@@ -138,7 +139,11 @@ class AtualizarContaUpdateView(PermissaoMixin, BasicUpdateAPIView):
         return super().patch(request, *args, **kwargs)
 
     def do_action_patch(self, serializer, request, *args, **kwargs):
-        conta = self.object.business.atualizar_conta(serializer.validated_data, request.user)
+        conta = self.object.business.atualizar_conta(
+            serializer.validated_data,
+            request.user,
+            ip=ip_do_cliente(request),
+        )
         return {
             'message': 'Conta de acesso atualizada.',
             'data': conta.helper.resumo(),

@@ -3,6 +3,7 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'API do painel da distribuidora de gás e água mineral.',
     'VERSION': '0.1.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    'SERVE_PERMISSIONS': ['AppCore.core.permissions.permissions.AdministradorPermission'],
     'SWAGGER_UI_DIST': 'SIDECAR',
     'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
     'REDOC_DIST': 'SIDECAR',

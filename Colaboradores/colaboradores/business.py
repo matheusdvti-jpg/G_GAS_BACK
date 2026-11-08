@@ -7,7 +7,7 @@ class ColaboradorBusiness(ModelInstanceBusiness):
         from .rules import ColaboradorRules
 
         conta = dados.pop('conta', None)
-        ColaboradorRules().validar_novo(dados)
+        ColaboradorRules().validar_novo(dados, usuario)
         colaborador = Colaborador.objects.create(
             nome=dados['nome'],
             cpf=dados['cpf'],
@@ -34,7 +34,7 @@ class ColaboradorBusiness(ModelInstanceBusiness):
             campo: getattr(self.object_instance, campo)
             for campo in ('nome', 'telefone', 'perfil', 'ativo', 'placa_veiculo')
         }
-        self.object_instance.rules.validar_atualizacao(dados)
+        self.object_instance.rules.validar_atualizacao(dados, usuario)
         alterados = [campo for campo in antes if campo in dados]
         for campo in alterados:
             setattr(self.object_instance, campo, dados[campo])
@@ -53,6 +53,7 @@ class ColaboradorBusiness(ModelInstanceBusiness):
     def criar_conta(self, dados, usuario=None):
         from .models import User
 
+        self.object_instance.rules.validar_gestao(usuario)
         conta = self.object_instance.helper.conta_ou_nenhuma()
         self.object_instance.rules.validar_sem_conta(conta)
         self.object_instance.rules.validar_conta(dados)
@@ -72,7 +73,8 @@ class ColaboradorBusiness(ModelInstanceBusiness):
         )
         return conta
 
-    def atualizar_conta(self, dados, usuario=None):
+    def atualizar_conta(self, dados, usuario=None, ip=''):
+        self.object_instance.rules.validar_gestao(usuario)
         conta = self.object_instance.helper.conta_ou_nenhuma()
         self.object_instance.rules.validar_com_conta(conta)
         username_anterior = conta.username
@@ -94,11 +96,16 @@ class ColaboradorBusiness(ModelInstanceBusiness):
             alteracoes['username'] = {'antes': username_anterior, 'depois': conta.username}
         if conta.email != email_anterior:
             alteracoes['email'] = {'antes': email_anterior, 'depois': conta.email}
+        acao = 'ATUALIZAR_CONTA'
         if senha_alterada:
             alteracoes['senha_alterada'] = True
+            if ip:
+                alteracoes['ip'] = ip
+            acao = 'SENHA_ALTERADA'
+            self._revogar_sessoes(conta)
         self._auditar(
             usuario,
-            'ATUALIZAR_CONTA',
+            acao,
             self.object_instance.id,
             f'Conta de {self.object_instance.nome} atualizada.',
             alteracoes,
@@ -112,6 +119,13 @@ class ColaboradorBusiness(ModelInstanceBusiness):
             return
         conta.is_active = self.object_instance.ativo
         conta.save(update_fields=['is_active', 'updated_at'])
+        if not conta.is_active:
+            self._revogar_sessoes(conta)
+
+    def _revogar_sessoes(self, conta):
+        from Auth.auth.models import Sessao
+
+        Sessao.revogar_usuario(conta)
 
     def _auditar(self, usuario, acao, entidade_id, descricao, alteracoes=None, tipo_entidade='COLABORADOR'):
         if usuario is None:

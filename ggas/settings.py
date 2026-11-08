@@ -7,15 +7,14 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parent.parent / '.env')
 
 from .rest_framework_settings import *  # noqa: F403
+from .segredos import CHAVE_SECRETA_PADRAO, recusar_segredo_publico
 from .spectacular_settings import *  # noqa: F403
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get(
-    'DJANGO_SECRET_KEY',
-    'ggas-dev-apenas-local-nao-usar-fora-desta-maquina',
-)
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', CHAVE_SECRETA_PADRAO)
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
+EM_TESTE = 'test' in sys.argv
 ALLOWED_HOSTS = [
     host for host in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if host
 ]
@@ -29,8 +28,9 @@ cors_origins = os.environ.get(
 CORS_ALLOWED_ORIGINS = [origin for origin in cors_origins.split(',') if origin]
 
 DJANGO_DB_KEY = os.environ.get('DJANGO_DB_KEY', '')
-if not DJANGO_DB_KEY and 'test' in sys.argv:
+if not DJANGO_DB_KEY and EM_TESTE:
     DJANGO_DB_KEY = 'chave-somente-dos-testes-automatizados'
+recusar_segredo_publico(DEBUG, EM_TESTE, SECRET_KEY, DJANGO_DB_KEY)
 
 DATABASES = {
     'default': {
@@ -42,20 +42,31 @@ DATABASES = {
 
 SESSAO_COOKIE_NAME = 'ggas_sessao'
 SESSAO_COOKIE_AGE = 60 * 60 * 8
+SESSAO_OCIOSA = 60 * 30
+SESSAO_TOQUE = 60
 SESSAO_COOKIE_SECURE = os.environ.get('DJANGO_COOKIE_SECURE', 'True' if not DEBUG else 'False') == 'True'
-if 'test' in sys.argv:
+if EM_TESTE:
     SESSAO_COOKIE_SECURE = False
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = 'same-origin'
 X_FRAME_OPTIONS = 'DENY'
 SESSION_COOKIE_HTTPONLY = True
-CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Strict'
-CSRF_COOKIE_SAMESITE = 'Strict'
 SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SECURE = not DEBUG
-SECURE_SSL_REDIRECT = os.environ.get('DJANGO_SSL_REDIRECT', 'False') == 'True'
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SECURE = SESSAO_COOKIE_SECURE
+CSRF_TRUSTED_ORIGINS = list(CORS_ALLOWED_ORIGINS)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+IP_CABECALHO_PROXY = '' if DEBUG or EM_TESTE else 'HTTP_X_FORWARDED_FOR'
+if DEBUG or EM_TESTE:
+    SECURE_SSL_REDIRECT = False
+else:
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 60 * 60 * 24 * 365
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 
 AUTH_USER_MODEL = 'colaboradores.User'
 
@@ -163,7 +174,10 @@ TEMPLATES = [
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {'min_length': 12},
+    },
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]

@@ -1,6 +1,8 @@
 import logging
 import time
 
+from Auth.auth.rede import ip_do_cliente
+
 logger = logging.getLogger('ggas.requisicao')
 
 
@@ -43,5 +45,5 @@ class LogRequisicaoMiddleware:
             status_code,
             duracao_ms,
             quem,
-            request.META.get('REMOTE_ADDR') or '-',
+            ip_do_cliente(request),
         )
