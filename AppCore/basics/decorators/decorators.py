@@ -24,12 +24,20 @@ from AppCore.core.exceptions.exceptions import (
 logger = logging.getLogger(__name__)
 
 
+def _resumo(err):
+    texto = str(err).replace('\n', ' ')
+    if len(texto) > 300:
+        return texto[:300] + '...'
+    return texto
+
+
 def handle_exceptions(func):
     @wraps(func)
     def wrapper(self, request, *args, **kwargs):
         try:
             return func(self, request, *args, **kwargs)
         except BusinessRuleException as err:
+            logger.warning('Regra de negócio recusada em %s: %s', func.__qualname__, _resumo(err))
             return Response(
                 {
                     'status': 'error',
@@ -39,6 +47,7 @@ def handle_exceptions(func):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except ValidationException as err:
+            logger.warning('Validação recusada em %s: %s', func.__qualname__, _resumo(err))
             return Response(
                 {
                     'status': 'error',
@@ -48,11 +57,13 @@ def handle_exceptions(func):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except DRFValidationError as err:
+            logger.warning('Validação recusada em %s: %s', func.__qualname__, _resumo(err))
             return Response(
                 {'status': 'error', 'detail': err.detail},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except (AuthorizationException, PermissionDenied) as err:
+            logger.warning('Acesso negado em %s: %s', func.__qualname__, _resumo(err))
             return Response(
                 {
                     'status': 'error',
@@ -62,6 +73,7 @@ def handle_exceptions(func):
                 status=status.HTTP_403_FORBIDDEN,
             )
         except NotFoundException as err:
+            logger.info('Registro não encontrado em %s: %s', func.__qualname__, _resumo(err))
             return Response(
                 {
                     'status': 'error',

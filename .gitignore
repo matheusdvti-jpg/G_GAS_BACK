@@ -6,5 +6,6 @@ certs/
 *.claro.bak
 .env
 staticfiles/
+logs/
 .idea/
 .vscode/

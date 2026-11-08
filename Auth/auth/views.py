@@ -1,3 +1,5 @@
+import logging
+
 from django.conf import settings
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
@@ -13,6 +15,8 @@ from Colaboradores.colaboradores.helpers import UserHelpers
 
 from .bloqueio import bloqueado_ate, chave_de, limpar, registrar_falha
 from .models import Sessao
+
+logger = logging.getLogger(__name__)
 
 
 def _ip(request) -> str:
@@ -71,8 +75,10 @@ class TokenObtainPairViewDOC(AllowAnyMixin, APIView):
     def post(self, request, *args, **kwargs):
         identificador = (request.data.get('username') or '').strip()
         senha = request.data.get('password') or ''
-        chave = chave_de(_ip(request), identificador)
+        ip = _ip(request)
+        chave = chave_de(ip, identificador)
         if bloqueado_ate(chave):
+            logger.warning('Login bloqueado por excesso de tentativas. identificador=%s ip=%s', identificador, ip)
             return Response(
                 {'status': 'error', 'detail': 'Muitas tentativas de login. Aguarde 15 minutos.'},
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -81,15 +87,18 @@ class TokenObtainPairViewDOC(AllowAnyMixin, APIView):
         usuario = UserHelpers().buscar_por_identificador(identificador)
         if usuario is None or not usuario.check_password(senha):
             registrar_falha(chave)
+            logger.warning('Login recusado. identificador=%s ip=%s', identificador, ip)
             raise serializers.ValidationError({'detail': CREDENCIAIS_INVALIDAS})
         try:
             usuario.rules.pode_autenticar()
         except BusinessRuleException as exc:
             registrar_falha(chave)
+            logger.warning('Login recusado. identificador=%s ip=%s motivo=%s', identificador, ip, exc.message)
             raise serializers.ValidationError({'detail': exc.message})
 
         limpar(chave)
         segredo = Sessao.abrir(usuario)
+        logger.info('Login aceito. usuario=%s ip=%s', usuario.pk, ip)
         response = Response({'usuario': usuario.helper.resumo()})
         _gravar_cookie(response, segredo)
         return response

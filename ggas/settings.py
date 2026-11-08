@@ -131,6 +131,7 @@ INSTALLED_APPS = (
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'ggas.middleware.LogRequisicaoMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -166,3 +167,53 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
+
+LOG_DIR = BASE_DIR / 'logs'
+LOG_DIR.mkdir(exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'padrao': {
+            'format': '%(asctime)s %(levelname)s %(name)s %(message)s',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'padrao',
+        },
+        'arquivo': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': str(LOG_DIR / 'ggas.log'),
+            'maxBytes': 5 * 1024 * 1024,
+            'backupCount': 3,
+            'formatter': 'padrao',
+            'encoding': 'utf-8',
+            'delay': True,
+        },
+    },
+    'loggers': {
+        'ggas': {
+            'handlers': ['console', 'arquivo'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'AppCore': {
+            'handlers': ['console', 'arquivo'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'Auth': {
+            'handlers': ['console', 'arquivo'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['console', 'arquivo'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+    },
+}
