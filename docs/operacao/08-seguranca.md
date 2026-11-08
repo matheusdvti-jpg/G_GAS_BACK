@@ -7,7 +7,7 @@ Controles que o código já aplica, e o que precisa mudar antes de sair da máqu
 - Senha com hash do Django. Não aparece em auditoria nem no histórico do model.
 - Sessão opaca no cookie `ggas_sessao`, HttpOnly e `SameSite=Lax`. O login recusa usuário inativo e colaborador inativo.
 - `POST`, `PATCH` e `DELETE` exigem o cabeçalho `X-CSRFToken`. O cookie `csrftoken` sai de `GET /auth/csrf/` e não é HttpOnly, para o painel ler o valor. As origens de `CORS_ALLOWED_ORIGINS` também valem como origem confiável do CSRF.
-- A sessão dura no máximo 8 horas e expira após 30 minutos sem uso. O uso só é gravado de novo depois de 1 minuto.
+- A sessão dura no máximo 8 horas. Ficar sem usar o painel não encerra a sessão antes disso.
 - Troca de senha e desativação da conta revogam as sessões daquele usuário. O logout revoga a sessão do cookie na hora.
 - Cinco falhas de login na mesma chave de IP e identificador bloqueiam por 15 minutos. A contagem trava a linha, então tentativas paralelas não passam de cinco. Login aceito, recusado, bloqueio e senha alterada entram na auditoria com usuário e IP. Senha, hash e cookie ficam de fora. Senha nova tem no mínimo 12 caracteres; o hash que já existe continua até a troca.
 - O IP do cliente vem de uma função só. Com o debug ligado, ela usa `REMOTE_ADDR` e ignora `X-Forwarded-For`. Publicado, lê o último endereço de `X-Forwarded-For`, o salto que o proxy da plataforma acrescenta.

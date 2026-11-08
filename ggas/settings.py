@@ -42,8 +42,6 @@ DATABASES = {
 
 SESSAO_COOKIE_NAME = 'ggas_sessao'
 SESSAO_COOKIE_AGE = 60 * 60 * 8
-SESSAO_OCIOSA = 60 * 30
-SESSAO_TOQUE = 60
 SESSAO_COOKIE_SECURE = os.environ.get('DJANGO_COOKIE_SECURE', 'True' if not DEBUG else 'False') == 'True'
 if EM_TESTE:
     SESSAO_COOKIE_SECURE = False

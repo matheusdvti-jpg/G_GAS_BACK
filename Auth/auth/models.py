@@ -62,16 +62,9 @@ class Sessao(models.Model):
                 chave_hash=resumir_segredo(segredo),
                 revogada_em__isnull=True,
                 expira_em__gt=agora,
-                ultimo_acesso__gt=agora - timedelta(seconds=settings.SESSAO_OCIOSA),
             )
             .first()
         )
-
-    def registrar_uso(self) -> None:
-        agora = timezone.now()
-        if agora - self.ultimo_acesso < timedelta(seconds=settings.SESSAO_TOQUE):
-            return
-        Sessao.objects.filter(pk=self.pk, revogada_em__isnull=True).update(ultimo_acesso=agora)
 
 
 class BloqueioLogin(models.Model):

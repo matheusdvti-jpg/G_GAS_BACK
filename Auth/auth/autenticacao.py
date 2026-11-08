@@ -33,7 +33,6 @@ class SessaoAuthentication(BaseAuthentication):
         sessao = Sessao.buscar_ativa(segredo)
         if sessao is None or not sessao.usuario.is_active:
             return None
-        sessao.registrar_uso()
         return (sessao.usuario, sessao)
 
     def authenticate_header(self, request):

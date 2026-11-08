@@ -532,23 +532,15 @@ class SessaoCookieTests(APITestCase):
         self.admin.refresh_from_db()
         self.assertTrue(self.admin.check_password('ContaNova@2026'))
 
-    def test_sessao_ociosa_expira_e_o_uso_recente_permanece(self):
+    def test_sessao_parada_permanece_ate_o_prazo(self):
         entrada = self._entrar()
         self.assertEqual(entrada.status_code, 200, entrada.data)
         sessao = Sessao.objects.get(usuario=self.admin)
 
-        sessao.ultimo_acesso = timezone.now() - timedelta(seconds=30)
-        sessao.save(update_fields=['ultimo_acesso'])
-        self.assertEqual(self.client.get('/auth/eu/').status_code, 200)
-        sessao.refresh_from_db()
-        acesso_recente = sessao.ultimo_acesso
-
-        sessao.ultimo_acesso = timezone.now() - timedelta(minutes=2)
-        sessao.save(update_fields=['ultimo_acesso'])
-        self.assertEqual(self.client.get('/auth/eu/').status_code, 200)
-        sessao.refresh_from_db()
-        self.assertGreater(sessao.ultimo_acesso, acesso_recente)
-
         sessao.ultimo_acesso = timezone.now() - timedelta(minutes=31)
         sessao.save(update_fields=['ultimo_acesso'])
+        self.assertEqual(self.client.get('/auth/eu/').status_code, 200)
+
+        sessao.expira_em = timezone.now() - timedelta(seconds=1)
+        sessao.save(update_fields=['expira_em'])
         self.assertEqual(self.client.get('/auth/eu/').status_code, 401)

@@ -92,7 +92,7 @@ Sessão:
 - `GET /auth/eu/` — envelope com a sessão.
 - `POST /auth/token_jwt/refresh/` e `POST /auth/token_jwt/verify/` respondem 410.
 
-O login não usa o envelope `status` / `message` / `data`. O restante da API de negócio usa. A sessão dura 8 horas e cai após 30 minutos sem uso. Troca de senha e desativação da conta revogam as sessões daquele usuário.
+O login não usa o envelope `status` / `message` / `data`. O restante da API de negócio usa. A sessão dura 8 horas, mesmo sem uso. Troca de senha e desativação da conta revogam as sessões daquele usuário.
 
 ## O que não fazer sem alinhamento
 
