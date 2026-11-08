@@ -1,9 +1,6 @@
-from pathlib import Path
-
-from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-from ggas.db.sqlite_cifrado.base import copiar_banco_cifrado
+from ggas.backup_automatico import executar
 
 
 class Command(BaseCommand):
@@ -25,12 +22,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        config = settings.DATABASES['default']
-        origem = options['origem'] or str(config.get('NAME') or '')
-        segredo = config.get('PASSWORD') or ''
-        destino = options['destino'] or str(Path(settings.BASE_DIR) / 'backups' / 'db.sqlite3.bak')
         try:
-            copiar_banco_cifrado(origem, destino, segredo)
+            destino = executar(options['origem'], options['destino'])
         except Exception as erro:
             raise CommandError(
                 f'O backup não foi concluído. A cópia anterior foi mantida. {erro}'
