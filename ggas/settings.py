@@ -4,10 +4,10 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+load_dotenv(Path(__file__).resolve().parent.parent / '.env')
+
 from .rest_framework_settings import *  # noqa: F403
 from .spectacular_settings import *  # noqa: F403
-
-load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 

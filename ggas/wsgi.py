@@ -1,7 +1,9 @@
 import os
+from pathlib import Path
+
+os.chdir(Path(__file__).resolve().parent.parent)
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ggas.settings')
 
 from django.core.wsgi import get_wsgi_application
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ggas.settings')
 
 application = get_wsgi_application()
