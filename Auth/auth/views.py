@@ -51,8 +51,14 @@ def _apagar_cookie(response) -> None:
 @extend_schema(tags=['Auth'], summary='Define o cookie de CSRF')
 class CsrfView(AllowAnyMixin, APIView):
     def get(self, request):
-        get_token(request._request)
-        return Response({'status': 'success', 'message': 'Proteção de CSRF pronta.'})
+        token = get_token(request._request)
+        return Response(
+            {
+                'status': 'success',
+                'message': 'Proteção de CSRF pronta.',
+                'csrf_token': token,
+            }
+        )
 
 
 @extend_schema(tags=['Auth'], summary='Autenticar e abrir sessão opaca')

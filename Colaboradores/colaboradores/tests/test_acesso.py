@@ -477,6 +477,7 @@ class SessaoCookieTests(APITestCase):
     def _entrar(self):
         preparado = self.client.get('/auth/csrf/')
         self.assertEqual(preparado.status_code, 200)
+        self.assertTrue(preparado.data.get('csrf_token'))
         self.assertFalse(preparado.cookies['csrftoken']['httponly'])
         self.assertEqual(preparado.cookies['csrftoken']['samesite'], 'Lax')
         return self.client.post(
