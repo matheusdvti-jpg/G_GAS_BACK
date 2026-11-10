@@ -4,7 +4,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.filters import OrderingFilter
 
-from AppCore.basics.mixins.mixins import AutenticadoMixin, PermissaoMixin
+from AppCore.basics.mixins.mixins import PermissaoMixin
 from AppCore.basics.views.basic_views import BasicGetAPIView, BasicListAPIView, BasicPostAPIView, BasicUpdateAPIView
 
 from .models import Cliente
@@ -37,7 +37,8 @@ class ClienteFilter(django_filters.FilterSet):
         return queryset.filter(consulta)
 
 
-class ListarClientesListView(AutenticadoMixin, BasicListAPIView):
+class ListarClientesListView(PermissaoMixin, BasicListAPIView):
+    permissao = 'ver_clientes'
     queryset = Cliente.objects.all()
     serializer_class = ClienteSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -80,7 +81,8 @@ class CadastrarClientePostView(PermissaoMixin, BasicPostAPIView):
         }
 
 
-class ObterClienteGetView(AutenticadoMixin, BasicGetAPIView):
+class ObterClienteGetView(PermissaoMixin, BasicGetAPIView):
+    permissao = 'ver_clientes'
     queryset = Cliente.objects.all()
     serializer_class = ClienteSerializer
     success_message = 'Cliente encontrado.'

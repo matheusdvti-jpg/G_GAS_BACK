@@ -7,7 +7,7 @@ Este documento é a referência de regra. Se o código divergir daqui, corrija o
 - Login aceita `username` ou e-mail no campo `username`.
 - Conta inativa ou colaborador inativo não autentica e não passa em `UsuarioAtivoPermission`.
 - O último administrador ativo não pode ser inativado nem perder o perfil de administrador.
-- Senha fica só no hash do Django. Auditoria de conta pode dizer que a senha mudou. Não grava a senha.
+- Senha nova tem no mínimo 12 caracteres. O hash já gravado não é revalidado no login. Senha fica só no hash do Django. Auditoria de login e de troca de senha leva usuário e IP. Não grava senha, hash nem cookie.
 - CPF tem 11 dígitos e dígitos verificadores. CNPJ tem 14.
 - Telefone de cliente e de fornecedor tem 10 ou 11 dígitos. O telefone do colaborador exige ao menos 8 caracteres.
 
@@ -19,13 +19,20 @@ Este documento é a referência de regra. Se o código divergir daqui, corrija o
 | `cancelar_venda`, `reabrir_pedido` | Administrador, gerente |
 | `confirmar_entrega` | Administrador, gerente, entregador |
 | `entrada_estoque`, `saida_manual_estoque`, `conferencia_inventario` | Administrador, gerente, estoquista |
-| `cadastrar_cliente` | Administrador, gerente, atendente |
+| `cadastrar_cliente`, `ver_clientes`, `ver_pedidos` | Administrador, gerente, atendente |
+| `ver_produtos` | Administrador, gerente, atendente, estoquista |
+| `ver_custo`, `ver_fornecedores`, `ver_movimentacoes` | Administrador, gerente, estoquista |
+| `ver_dados_colaborador` | Administrador, gerente |
 | `gerir_produto`, `gerir_fornecedor`, `gestao_colaboradores`, `relatorios_financeiros` | Administrador, gerente |
 | `auditoria_sistema` | Administrador |
 
-O painel (`/relatorios/painel/`) é de qualquer usuário ativo. O fechamento por período exige `relatorios_financeiros`.
+O painel (`/relatorios/painel/`) é de qualquer usuário ativo. `faturamento_total` e `ticket_medio` só entram na resposta de quem tem `relatorios_financeiros`. O fechamento por período exige o mesmo código.
+
+A lista e o detalhe de pedido usam `PedidoLeituraMixin`. Entregador não está em `ver_pedidos`: a consulta filtra `entregador_id` do próprio colaborador, e o pedido de outro responde 404. Estoquista não lista pedido nem cliente. `preco_custo` e `custo_unitario` saem da resposta quando o usuário autenticado não tem `ver_custo`. CPF e `conta` do colaborador saem quando ele não tem `ver_dados_colaborador`. A resposta de criação, montada sem o request, continua completa. `GET /auth/eu/` também continua completo: é a sessão de quem entrou.
 
 `gestao_cadastros` existe na matriz com o mesmo rótulo do painel (cadastros em geral) e não protege nenhuma rota. Cliente, produto e fornecedor usam os códigos específicos.
+
+`gestao_colaboradores` não iguala o gerente ao administrador. O gerente cadastra e edita atendente, estoquista e entregador. Só o administrador cria, promove ou altera administrador e gerente, inclusive a senha dessas contas.
 
 ## Produto
 
@@ -83,7 +90,7 @@ Datas são inclusivas no fuso `America/Sao_Paulo`, pelo `created_at` do pedido. 
 
 Pedido cancelado sai do faturamento, do ticket, da forma de pagamento e dos produtos vendidos. Continua na contagem de cancelados e na lista de pedidos.
 
-- **Painel.** Faturamento é a soma de `total` dos não cancelados. Ticket médio só aparece quando existe ao menos um `ENTREGUE`; a divisão é faturamento dividido pela quantidade de não cancelados. Sem entrega concluída, o ticket é zero. `pedidos_entregues` conta todos os `ENTREGUE`. `pedidos_entregues_hoje` conta pedidos distintos que receberam status `ENTREGUE` hoje no histórico, mesmo que depois tenham sido reabertos. A fila lista os `PENDENTE` do mais antigo ao mais novo. Estoque de gás e de água soma o cheio dos produtos ativos. Alerta e posição do depósito também ignoram produto inativo. Alerta: cheio menor ou igual ao mínimo.
+- **Painel.** Faturamento é a soma de `total` dos não cancelados. Ticket médio só aparece quando existe ao menos um `ENTREGUE`; a divisão é faturamento dividido pela quantidade de não cancelados. Sem entrega concluída, o ticket é zero. Esses dois campos só vão na resposta de administrador e gerente. `pedidos_entregues` conta todos os `ENTREGUE`. `pedidos_entregues_hoje` conta pedidos distintos que receberam status `ENTREGUE` hoje no histórico, mesmo que depois tenham sido reabertos. A fila lista os `PENDENTE` do mais antigo ao mais novo. Estoque de gás e de água soma o cheio dos produtos ativos. Alerta e posição do depósito também ignoram produto inativo. Alerta: cheio menor ou igual ao mínimo.
 - **Período.** Bruto é a soma dos subtotais não cancelados. Desconto é a soma de `valor_desconto`. Líquido é a soma de `total`. Ticket do período é líquido dividido pelos não cancelados, inclusive quando ninguém foi entregue. Formas de pagamento saem sempre as quatro, na ordem Pix, dinheiro, débito e crédito, com percentual sobre o líquido. Entregadores listam todo colaborador com esse perfil, ativo ou não. Produtos mais vendidos ordenam pela quantidade.
 
 A grade de pedidos do relatório não vem neste payload. Ela é `GET /pedidos/listar/` com `de` e `ate`.

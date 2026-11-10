@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from Colaboradores.colaboradores.permissoes import usuario_pode
+
 from .choices import TIPOS_SAIDA_MANUAL
 from .models import MovimentacaoEstoque
 
@@ -50,3 +52,15 @@ class MovimentacaoSerializer(serializers.ModelSerializer):
             'nome_usuario',
             'created_at',
         )
+
+    def to_representation(self, instance):
+        dados = super().to_representation(instance)
+        request = self.context.get('request')
+        usuario = getattr(request, 'user', None) if request is not None else None
+        if (
+            usuario is not None
+            and getattr(usuario, 'is_authenticated', False)
+            and not usuario_pode(usuario, 'ver_custo')
+        ):
+            dados.pop('custo_unitario', None)
+        return dados

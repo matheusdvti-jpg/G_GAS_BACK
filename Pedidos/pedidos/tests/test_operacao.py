@@ -27,7 +27,7 @@ def criar_conta(nome, cpf, perfil, username, placa=''):
             'conta': {
                 'username': username,
                 'email': f'{username}@ggas.com.br',
-                'password': 'Perfil@123',
+                'password': 'Perfil@123456',
             },
         }
     )
@@ -254,7 +254,7 @@ class EstoqueEPedidosTests(APITestCase):
             {'status': 'ENTREGUE'},
             format='json',
         )
-        self.assertEqual(outro_entregador.status_code, 403)
+        self.assertEqual(outro_entregador.status_code, 404)
 
         self.client.force_authenticate(self.joao.conta)
         entregue = self.client.patch(
@@ -386,19 +386,25 @@ class EstoqueEPedidosTests(APITestCase):
         self.assertEqual(pedido.status_code, 201, pedido.data)
         endereco = f"/pedidos/{pedido.data['data']['id']}/status/"
 
-        for conta in (self.atendente, self.estoquista, self.maria.conta):
+        for conta in (self.atendente, self.estoquista):
             self.client.force_authenticate(conta)
             confirmacao = self.client.patch(endereco, {'status': 'ENTREGUE'}, format='json')
             self.assertEqual(confirmacao.status_code, 403, confirmacao.data)
+
+        self.client.force_authenticate(self.maria.conta)
+        self.assertEqual(self.client.patch(endereco, {'status': 'ENTREGUE'}, format='json').status_code, 404)
 
         self.client.force_authenticate(self.gerente)
         entregue = self.client.patch(endereco, {'status': 'ENTREGUE'}, format='json')
         self.assertEqual(entregue.status_code, 200, entregue.data)
 
-        for conta in (self.atendente, self.joao.conta, self.maria.conta):
+        for conta in (self.atendente, self.joao.conta):
             self.client.force_authenticate(conta)
             reabertura = self.client.patch(endereco, {'status': 'PENDENTE'}, format='json')
             self.assertEqual(reabertura.status_code, 403, reabertura.data)
+
+        self.client.force_authenticate(self.maria.conta)
+        self.assertEqual(self.client.patch(endereco, {'status': 'PENDENTE'}, format='json').status_code, 404)
 
         self.client.force_authenticate(self.gerente)
         invalido = self.client.patch(endereco, {'status': 'NOVO'}, format='json')

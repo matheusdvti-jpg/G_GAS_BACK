@@ -4,8 +4,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.filters import OrderingFilter
 
-from AppCore.basics.mixins.mixins import AutenticadoMixin, PermissaoMixin
+from AppCore.basics.mixins.mixins import PedidoLeituraMixin, PermissaoMixin
 from AppCore.basics.views.basic_views import BasicGetAPIView, BasicListAPIView, BasicPostAPIView, BasicUpdateAPIView
+
+from Colaboradores.colaboradores.choices import PERFIL_ENTREGADOR
 
 from .helpers import PedidoHelpers
 from .models import Pedido
@@ -38,10 +40,19 @@ class PedidoFilter(django_filters.FilterSet):
 
 class PedidoQuerysetMixin:
     def get_queryset(self):
-        return PedidoHelpers().para_consulta()
+        consulta = PedidoHelpers().para_consulta()
+        usuario = getattr(self.request, 'user', None)
+        colaborador = getattr(usuario, 'colaborador', None)
+        if (
+            colaborador is not None
+            and colaborador.perfil == PERFIL_ENTREGADOR
+            and not getattr(usuario, 'is_superuser', False)
+        ):
+            return consulta.filter(entregador_id=colaborador.id)
+        return consulta
 
 
-class ListarPedidosListView(PedidoQuerysetMixin, AutenticadoMixin, BasicListAPIView):
+class ListarPedidosListView(PedidoQuerysetMixin, PedidoLeituraMixin, BasicListAPIView):
     serializer_class = PedidoSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_class = PedidoFilter
@@ -92,7 +103,7 @@ class CadastrarPedidoPostView(PermissaoMixin, BasicPostAPIView):
         }
 
 
-class ObterPedidoGetView(PedidoQuerysetMixin, AutenticadoMixin, BasicGetAPIView):
+class ObterPedidoGetView(PedidoQuerysetMixin, PedidoLeituraMixin, BasicGetAPIView):
     serializer_class = PedidoSerializer
     success_message = 'Pedido encontrado.'
 
@@ -101,7 +112,7 @@ class ObterPedidoGetView(PedidoQuerysetMixin, AutenticadoMixin, BasicGetAPIView)
         return super().get(request, *args, **kwargs)
 
 
-class AlterarStatusPedidoUpdateView(PedidoQuerysetMixin, AutenticadoMixin, BasicUpdateAPIView):
+class AlterarStatusPedidoUpdateView(PedidoQuerysetMixin, PedidoLeituraMixin, BasicUpdateAPIView):
     serializer_class = StatusPedidoSerializer
     success_message = 'Status do pedido atualizado.'
 

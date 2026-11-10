@@ -16,7 +16,7 @@ class PainelGetView(AutenticadoMixin, APIView):
             {
                 'status': 'success',
                 'message': 'Painel carregado.',
-                'data': LeituraBusiness().painel(),
+                'data': LeituraBusiness().painel(request.user),
             }
         )
 

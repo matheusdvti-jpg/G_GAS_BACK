@@ -26,6 +26,8 @@ class RegistroAuditoria(ModelHelperMixin, ModelBusinessMixin, ModelRulesMixin, B
         verbose_name='Usuário',
         on_delete=models.PROTECT,
         related_name='registros_auditoria',
+        null=True,
+        blank=True,
     )
     nome_usuario = models.CharField('Nome de quem executou', max_length=150)
     alteracoes = models.JSONField('Alterações', default=dict, blank=True)

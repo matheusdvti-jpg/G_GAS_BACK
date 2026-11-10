@@ -16,9 +16,9 @@ O banco inicial é **SQLite** (`db.sqlite3` na raiz deste projeto).
 - Leituras: painel operacional e fechamento financeiro por período
 - Auditoria das criações e alterações, visível para o administrador
 - Matriz de permissão por perfil
-- Administrador inicial: `python manage.py seed_inicial`
+- Administrador inicial, só com `DJANGO_DEBUG` ligado: `python manage.py seed_inicial`
 
-Documentação interativa: `http://127.0.0.1:8000/api/schema/swagger/`
+Documentação interativa, para o administrador: `http://127.0.0.1:8000/api/schema/swagger/`
 
 ## Rodar localmente
 
@@ -33,13 +33,13 @@ python manage.py seed_inicial
 python manage.py runserver
 ```
 
-O seed cria o usuário `admin` com a senha `Ggas@123` e o e-mail `admin@ggas.com.br`. Essa senha vale só para o SQLite local.
+O seed cria o usuário `admin` com a senha `GgasLocal@2026` e o e-mail `admin@ggas.com.br`. Essa senha vale só para o SQLite local. Se o `admin` já existia com `Ggas@123`, essa senha antiga continua até a troca.
 
 Login:
 
 ```http
 POST /auth/token_jwt/
-{"username": "admin", "password": "Ggas@123"}
+{"username": "admin", "password": "GgasLocal@2026"}
 ```
 
 O corpo também aceita o e-mail no campo `username`. A resposta traz `access`, `refresh` e `usuario` (nome, perfil e colaborador).

@@ -35,9 +35,9 @@ O atalho de trocar de usuário que existe no protótipo do front não é endpoin
 
 ### Entrar
 
-`POST /auth/token_jwt/` com usuário ou e-mail. A conta e o colaborador precisam estar ativos. `GET /auth/eu/` devolve nome, perfil e colaborador.
+`GET /auth/csrf/` e depois `POST /auth/token_jwt/` com usuário ou e-mail. A conta e o colaborador precisam estar ativos. A sessão fica no cookie `ggas_sessao`. `GET /auth/eu/` devolve nome, perfil e colaborador.
 
-O comando `python manage.py seed_inicial` cria o administrador local `admin` / `Ggas@123`.
+Com `DJANGO_DEBUG` ligado, `python manage.py seed_inicial` cria o administrador local `admin` / `GgasLocal@2026` quando essa conta ainda não existe. Com o debug desligado, o comando não cria essa conta e não escreve a senha. A base que já tinha `Ggas@123` mantém essa senha até a troca.
 
 ### Cadastrar
 
@@ -53,7 +53,7 @@ O atendente abre o pedido `PENDENTE`, com código `PED-000001`. A venda trava o 
 
 ### Ler
 
-Qualquer usuário ativo vê o painel: faturamento, fila e depósito. Administrador e gerente fecham o período: bruto, desconto, líquido, pagamento, entregador e produtos vendidos.
+Qualquer usuário ativo vê a fila e o depósito do painel. Faturamento e ticket médio só aparecem para administrador e gerente, que também fecham o período: bruto, desconto, líquido, pagamento, entregador e produtos vendidos.
 
 ## O que o back-end ainda não faz
 

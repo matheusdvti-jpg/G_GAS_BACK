@@ -4,6 +4,7 @@ from django.utils import timezone
 
 from AppCore.core.business.business import ModelInstanceBusiness
 
+from Colaboradores.colaboradores.permissoes import usuario_pode
 from Pedidos.pedidos.choices import FORMA_PAGAMENTO_CHOICES, STATUS_CANCELADO
 
 from .helpers import LeituraHelpers
@@ -16,14 +17,14 @@ class LeituraBusiness(ModelInstanceBusiness):
         self.helpers = LeituraHelpers()
         self.rules = LeituraRules()
 
-    def painel(self):
+    def painel(self, usuario):
         resumo = self.helpers.resumo_pedidos(self.helpers.pedidos_no_periodo(None, None))
         faturamento = resumo['faturamento']
         ticket = Decimal('0')
         if resumo['entregues'] and resumo['validos']:
             ticket = Decimal(faturamento) / Decimal(resumo['validos'])
         totais, alerta, produtos = self.helpers.estoque()
-        return {
+        dados = {
             'faturamento_total': self.helpers.formatar_dinheiro(faturamento),
             'ticket_medio': self.helpers.formatar_dinheiro(ticket),
             'pedidos_em_andamento': resumo['pendentes'],
@@ -55,6 +56,10 @@ class LeituraBusiness(ModelInstanceBusiness):
                 for produto in produtos
             ],
         }
+        if not usuario_pode(usuario, 'relatorios_financeiros'):
+            dados.pop('faturamento_total', None)
+            dados.pop('ticket_medio', None)
+        return dados
 
     def periodo(self, inicio_texto, fim_texto):
         inicio = self.rules.interpretar_data(inicio_texto)

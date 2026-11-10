@@ -16,28 +16,28 @@ O cliente HTTP traduz. A view React permanece. O back-end não ganha campo, stat
 | `403` de perfil | Esconder o botão de quem não tem o código |
 | Saldo só por movimentação depois do cadastro | Edição de produto sem reenviar cheio e seco |
 | `PENDENTE`, `ENTREGUE`, `CANCELADO` | Ignorar `NOVO`, `EM_SEPARACAO`, `PRONTO_ENTREGA`, `SAIU_ENTREGA` |
-| Login por token | Sem `switchUser` |
+| Login por cookie de sessão e CSRF | Sem `switchUser` |
 
 ## Onde implementar
 
 Troque os repositórios de `G_GAS_FRONT/src/infrastructure/repositories`. Casos de uso e views continuam chamando o mesmo repositório de domínio.
 
 - Base: `http://127.0.0.1:8000`. O CORS local já aceita as portas 3000 e 5173.
-- Rotas privadas: `Authorization: Bearer <access>`.
+- Rotas privadas: cookie `ggas_sessao` com `credentials: 'include'`. Mutação envia `X-CSRFToken`.
 - Sucesso de negócio: `status`, `message`, `data`. Lista também traz `count`, `next` e `previous`.
-- Erro de negócio: `status` `error` e `detail`. `400` é regra, `403` é perfil, `404` é ausência, `401` é sessão.
-- `POST /auth/token_jwt/` não usa envelope. O corpo de sucesso traz `access`, `refresh` e `usuario`. Renove com `POST /auth/token_jwt/refresh/`. A sessão corrente é `GET /auth/eu/`.
+- Erro de negócio: `status` `error` e `detail`. `400` é regra, `403` é perfil ou CSRF, `404` é ausência, `401` é sessão.
+- `POST /auth/token_jwt/` não usa envelope. Antes dele, `GET /auth/csrf/`. O corpo de sucesso traz `usuario` e o cookie de sessão. `POST /auth/sair/` encerra. A sessão corrente é `GET /auth/eu/`.
 - `id` da API é inteiro. A entidade do front guarda string. A conversão acontece na borda do cliente.
 
 ## Ajustes do painel
 
 ### Sessão
 
-Grave `access` e `refresh`. Monte o usuário logado com `usuario` do token e com `/auth/eu/`. A tela de equipe deixa de trocar o usuário no clique: cada pessoa entra com a própria conta. Não crie rota de troca de usuário.
+Não grave access nem refresh. O navegador guarda `ggas_sessao`. Monte o usuário logado com `usuario` do login e com `/auth/eu/`. A tela de equipe deixa de trocar o usuário no clique: cada pessoa entra com a própria conta. Não crie rota de troca de usuário.
 
 ### Dinheiro
 
-Some em centavos inteiros e formate na hora de mostrar. `"230.00" + 0` vira texto e quebra o `toFixed`. Campos de pedido, produto e cliente vêm como texto. O painel e o período já vêm formatados (`faturamento_total`, `ticket_medio`, `percentual`); exiba esse texto.
+Some em centavos inteiros e formate na hora de mostrar. `"230.00" + 0` vira texto e quebra o `toFixed`. Campos de pedido, produto e cliente vêm como texto. O painel e o período já vêm formatados (`faturamento_total`, `ticket_medio`, `percentual`); exiba esse texto. `faturamento_total`, `ticket_medio` e `preco_custo` podem não vir: esconda o cartão ou a coluna em vez de mostrar zero.
 
 ### Data
 
@@ -114,9 +114,9 @@ Leitura. O cliente monta a entidade do front a partir destas chaves.
 
 ## Conferir no navegador
 
-Com a API em `127.0.0.1:8000` e o painel em `localhost:3000`, no usuário `admin` / `Ggas@123`:
+Com a API em `127.0.0.1:8000` e o painel em `localhost:3000`, no usuário `admin`. Senha nova do seed: `GgasLocal@2026`. A conta local que já existia continua em `Ggas@123` até a troca. Senha nova tem 12 caracteres.
 
-1. Login, sessão em `/auth/eu/` e renovação do access.
+1. Login, sessão em `/auth/eu/` e saída em `/auth/sair/`. A mutação sai com `X-CSRFToken` e o cookie `ggas_sessao` fica `SameSite=Lax`.
 2. Venda de gás com vazio, dinheiro e troco. O cheio baixa e o seco sobe.
 3. Edição de produto que muda o preço e não manda saldo. O saldo da venda permanece.
 4. Cancelamento com motivo. O segundo cancelamento não estorna de novo.
