@@ -1,6 +1,9 @@
 import logging
 
 from django.conf import settings
+from django.middleware.csrf import get_token
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
 from rest_framework.response import Response
@@ -67,6 +70,13 @@ def _apagar_cookie(response) -> None:
         samesite=_samesite(),
     )
     _particionar(response)
+
+
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+class CsrfView(AllowAnyMixin, APIView):
+    @extend_schema(tags=['Auth'], summary='Entrega o token CSRF para o painel')
+    def get(self, request):
+        return Response({'csrfToken': get_token(request)})
 
 
 @extend_schema(tags=['Auth'], summary='Autenticar e abrir sessão opaca')

@@ -28,6 +28,12 @@ cors_origins = os.environ.get(
 )
 CORS_ALLOWED_ORIGINS = [origin for origin in cors_origins.split(',') if origin]
 
+csrf_origins = os.environ.get(
+    'CSRF_TRUSTED_ORIGINS',
+    'https://ggasfront.vercel.app,' + cors_origins,
+)
+CSRF_TRUSTED_ORIGINS = [origin for origin in csrf_origins.split(',') if origin]
+
 DJANGO_DB_KEY = os.environ.get('DJANGO_DB_KEY', '')
 if not DJANGO_DB_KEY and 'test' in sys.argv:
     DJANGO_DB_KEY = 'chave-somente-dos-testes-automatizados'
@@ -50,9 +56,10 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = 'same-origin'
 X_FRAME_OPTIONS = 'DENY'
 SESSION_COOKIE_HTTPONLY = True
-CSRF_COOKIE_HTTPONLY = True
+# O painel lê o csrftoken para enviar o cabeçalho X-CSRFToken.
+CSRF_COOKIE_HTTPONLY = False
 SESSION_COOKIE_SAMESITE = 'Strict'
-CSRF_COOKIE_SAMESITE = 'Strict'
+CSRF_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 SECURE_SSL_REDIRECT = os.environ.get('DJANGO_SSL_REDIRECT', 'False') == 'True'

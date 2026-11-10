@@ -27,6 +27,12 @@ class AcessoInicialTests(APITestCase):
             }
         )
 
+    def test_csrf_entrega_token_e_cookie(self):
+        response = self.client.get('/auth/csrf/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data['csrfToken'])
+        self.assertIn('csrftoken', response.cookies)
+
     def test_health_usa_sqlite(self):
         response = self.client.get('/api/health/')
         self.assertEqual(response.status_code, 200)
